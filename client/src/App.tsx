@@ -5,7 +5,7 @@ import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import JobsPage from '@/pages/JobsPage'
 import ApplicantsPage from '@/pages/ApplicantsPage'
-import DepartmentsPage from '@/pages/DepartmentsPage'
+import EmployeesPage from '@/pages/EmployeesPage'
 import LeavesPage from '@/pages/LeavesPage'
 import ReportsPage from '@/pages/ReportsPage'
 
@@ -32,7 +32,7 @@ export default function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="jobs" element={<JobsPage />} />
             <Route path="applicants" element={<ApplicantsPage />} />
-            <Route path="departments" element={<DepartmentsPage />} />
+            <Route path="employees" element={<EmployeesPage />} />
             <Route path="leaves" element={<LeavesPage />} />
             <Route path="reports" element={<ReportsPage />} />
           </Route>

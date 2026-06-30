@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, Briefcase, ClipboardList, Building2,
+  LayoutDashboard, Briefcase, ClipboardList, Users,
   CalendarDays, BarChart3, LogOut, ChevronRight, X
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { to: '/dashboard',   icon: LayoutDashboard, label: 'Dashboard',   roles: ['admin','hr','manager','employee'] },
   { to: '/jobs',        icon: Briefcase,       label: 'Job Management', roles: ['admin','hr','manager'] },
   { to: '/applicants',  icon: ClipboardList,   label: 'Applicants',  roles: ['admin','hr','manager'] },
-  { to: '/departments', icon: Building2,        label: 'Departments', roles: ['admin','hr'] },
+  { to: '/employees',   icon: Users,           label: 'Employees',   roles: ['admin','hr','manager'] },
   { to: '/leaves',      icon: CalendarDays,     label: 'Leaves',      roles: ['admin','hr','manager','employee'] },
   { to: '/reports',     icon: BarChart3,        label: 'Reports',     roles: ['admin','hr','manager'] },
 ]

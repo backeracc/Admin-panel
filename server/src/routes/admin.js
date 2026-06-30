@@ -4,6 +4,7 @@ import Job from '../models/Job.js';
 import Application from '../models/Application.js';
 import User from '../models/User.js';
 import { sendShortlistedEmail } from '../lib/mailer.js';
+import EmployeeProgress from '../models/EmployeeProgress.js';
 
 const router = express.Router();
 
@@ -390,6 +391,105 @@ router.get('/applications/:id/resume', async (req, res) => {
   } catch (error) {
     console.error('Error serving resume:', error);
     res.status(500).json({ error: 'Failed to serve resume' });
+  }
+});
+
+// GET /api/admin/employees/progress - Get hired employees with project/task progress
+router.get('/employees/progress', async (req, res) => {
+  try {
+    // 1. Get all applications where status is 'HIRED'
+    const hiredApplications = await Application.find({ status: 'HIRED' })
+      .populate('userId', 'name email role')
+      .populate('jobId', 'title category')
+      .sort({ updatedAt: -1 });
+
+    const formattedEmployees = [];
+
+    for (const app of hiredApplications) {
+      // 2. Find or create EmployeeProgress record
+      let progress = await EmployeeProgress.findOne({ applicationId: app._id });
+      
+      if (!progress) {
+        // Create default onboarding tasks if none exist
+        progress = new EmployeeProgress({
+          applicationId: app._id,
+          currentProject: 'Onboarding & Training',
+          tasks: [
+            { text: 'Complete code of conduct and document submission', completed: true, completedAt: new Date() },
+            { text: 'Set up local development environment and database connections', completed: false },
+            { text: 'Review architecture layout guidelines and components structure', completed: false }
+          ]
+        });
+        await progress.save();
+      }
+
+      const appObj = app.toJSON();
+      formattedEmployees.push({
+        applicationId: app._id,
+        user: appObj.userId || { name: 'Unknown Candidate', email: 'unknown@localsm.com' },
+        job: appObj.jobId || { title: 'Unknown Role', category: 'General' },
+        currentProject: progress.currentProject,
+        tasks: progress.tasks,
+        phone: app.phone,
+        location: app.location || 'Remote',
+        createdAt: app.createdAt
+      });
+    }
+
+    res.json(formattedEmployees);
+  } catch (error) {
+    console.error('Error fetching employee progress:', error);
+    res.status(500).json({ error: 'Failed to fetch employee progress' });
+  }
+});
+
+// POST /api/admin/employees/progress - Update current project or manage tasks
+router.post('/employees/progress', async (req, res) => {
+  try {
+    const { applicationId, currentProject, newTaskText, toggleTaskId, deleteTaskId } = req.body;
+
+    if (!applicationId) {
+      return res.status(400).json({ error: 'applicationId is required' });
+    }
+
+    let progress = await EmployeeProgress.findOne({ applicationId });
+
+    if (!progress) {
+      progress = new EmployeeProgress({ applicationId });
+    }
+
+    // 1. Update current project name
+    if (currentProject !== undefined) {
+      progress.currentProject = String(currentProject).trim() || 'Onboarding & Training';
+    }
+
+    // 2. Add a new task
+    if (newTaskText !== undefined) {
+      const text = String(newTaskText).trim();
+      if (text) {
+        progress.tasks.push({ text, completed: false });
+      }
+    }
+
+    // 3. Toggle a task completion status
+    if (toggleTaskId !== undefined) {
+      const task = progress.tasks.id(toggleTaskId);
+      if (task) {
+        task.completed = !task.completed;
+        task.completedAt = task.completed ? new Date() : undefined;
+      }
+    }
+
+    // 4. Delete a task
+    if (deleteTaskId !== undefined) {
+      progress.tasks.pull({ _id: deleteTaskId });
+    }
+
+    await progress.save();
+    res.json(progress);
+  } catch (error) {
+    console.error('Error updating employee progress:', error);
+    res.status(500).json({ error: 'Failed to update employee progress' });
   }
 });
 
