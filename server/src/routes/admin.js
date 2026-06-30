@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Job from '../models/Job.js';
 import Application from '../models/Application.js';
 import User from '../models/User.js';
+import { sendShortlistedEmail } from '../lib/mailer.js';
 
 const router = express.Router();
 
@@ -223,6 +224,172 @@ router.delete('/jobs/:id', async (req, res) => {
     session.endSession();
     console.error('Error deleting job:', error);
     res.status(500).json({ error: 'Failed to delete job' });
+  }
+});
+
+// PATCH /api/admin/applications/:id - Update application status / add notes
+router.patch('/applications/:id', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const { status, note } = req.body;
+    const appId = req.params.id;
+
+    // Retrieve application
+    const app = await Application.findById(appId).session(session);
+    if (!app) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    // Mode A: Only adding a note
+    if (note !== undefined && status === undefined) {
+      const trimmedNote = String(note || '').trim();
+      if (!trimmedNote) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({ error: 'Note content cannot be empty' });
+      }
+
+      app.notes.push({ note: trimmedNote });
+      await app.save({ session });
+      await session.commitTransaction();
+      session.endSession();
+
+      const createdNote = app.notes[app.notes.length - 1];
+      return res.json({ ok: true, note: createdNote });
+    }
+
+    // Mode B: Updating status (and optional note)
+    const validStatuses = ['PENDING', 'REVIEWING', 'SHORTLISTED', 'REJECTED', 'HIRED'];
+    if (!validStatuses.includes(status)) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ error: 'Invalid application status' });
+    }
+
+    const previousStatus = app.status;
+    const nextStatus = status;
+
+    let mailWarning = null;
+    let mailReport = null;
+
+    if (previousStatus !== nextStatus) {
+      const delta =
+        previousStatus !== 'SHORTLISTED' && nextStatus === 'SHORTLISTED'
+          ? -1
+          : previousStatus === 'SHORTLISTED' && nextStatus !== 'SHORTLISTED'
+            ? 1
+            : 0;
+
+      if (delta !== 0) {
+        const job = await Job.findById(app.jobId).session(session);
+        if (!job) {
+          await session.abortTransaction();
+          session.endSession();
+          return res.status(404).json({ error: 'Associated job not found' });
+        }
+
+        if (delta === -1 && job.openings <= 0) {
+          await session.abortTransaction();
+          session.endSession();
+          return res.status(400).json({ error: 'No openings left for this job. Increase openings before shortlisting.' });
+        }
+
+        // Adjust job openings
+        job.openings += delta;
+        await job.save({ session });
+      }
+
+      app.status = nextStatus;
+    }
+
+    if (note !== undefined) {
+      const trimmedNote = String(note || '').trim();
+      if (trimmedNote) {
+        app.notes.push({ note: trimmedNote });
+      }
+    }
+
+    await app.save({ session });
+    await session.commitTransaction();
+    session.endSession();
+
+    // Side effect: send email (outside database transaction)
+    if (previousStatus !== 'SHORTLISTED' && nextStatus === 'SHORTLISTED') {
+      try {
+        const populatedApp = await Application.findById(appId)
+          .populate('userId', 'name email')
+          .populate('jobId', 'title');
+
+        if (populatedApp && populatedApp.userId) {
+          const mailResult = await sendShortlistedEmail({
+            candidateName: populatedApp.userId.name || 'Candidate',
+            candidateEmail: populatedApp.userId.email || '',
+            jobRole: populatedApp.jobId?.title || 'the role'
+          });
+
+          if (!mailResult.success) {
+            mailWarning = 'Status updated, but shortlist email failed to send.';
+          }
+          mailReport = { ok: mailResult.success, provider: mailResult.provider, attempts: mailResult.attempts };
+        }
+      } catch (emailError) {
+        console.error('Failed to send shortlist email:', emailError);
+        mailWarning = 'Status updated, but shortlist email failed to send.';
+      }
+    }
+
+    res.json({
+      id: app._id,
+      status: app.status,
+      mailWarning,
+      mailReport
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Error updating application:', error);
+    res.status(500).json({ error: 'Failed to update application' });
+  }
+});
+
+// GET /api/admin/applications/:id/resume - Serves candidate resume
+router.get('/applications/:id/resume', async (req, res) => {
+  try {
+    const app = await Application.findById(req.params.id);
+    if (!app) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    const legacyResume = (app.resume || '').trim();
+
+    // 1. Redirect if it's an external web URL
+    if (legacyResume.startsWith('http://') || legacyResume.startsWith('https://')) {
+      return res.redirect(legacyResume);
+    }
+
+    // 2. Decode legacy data URL
+    if (legacyResume.startsWith('data:')) {
+      const matches = legacyResume.match(/^data:([^;]+);base64,(.+)$/);
+      if (matches) {
+        const contentType = matches[1];
+        const buffer = Buffer.from(matches[2], 'base64');
+        const filename = app.resumeFileName || 'resume.pdf';
+
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+        res.setHeader('Cache-Control', 'private, no-store');
+        res.setHeader('X-Resume-Storage', 'legacy-inline');
+        return res.send(buffer);
+      }
+    }
+
+    res.status(404).json({ error: 'Resume is not available for this application' });
+  } catch (error) {
+    console.error('Error serving resume:', error);
+    res.status(500).json({ error: 'Failed to serve resume' });
   }
 });
 

@@ -4,7 +4,7 @@ import AppLayout from '@/components/layout/AppLayout'
 import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import JobsPage from '@/pages/JobsPage'
-import AttendancePage from '@/pages/AttendancePage'
+import ApplicantsPage from '@/pages/ApplicantsPage'
 import DepartmentsPage from '@/pages/DepartmentsPage'
 import LeavesPage from '@/pages/LeavesPage'
 import ReportsPage from '@/pages/ReportsPage'
@@ -31,7 +31,7 @@ export default function App() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="jobs" element={<JobsPage />} />
-            <Route path="attendance" element={<AttendancePage />} />
+            <Route path="applicants" element={<ApplicantsPage />} />
             <Route path="departments" element={<DepartmentsPage />} />
             <Route path="leaves" element={<LeavesPage />} />
             <Route path="reports" element={<ReportsPage />} />
