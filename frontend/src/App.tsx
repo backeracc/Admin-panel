@@ -893,7 +893,7 @@ function HomePage({
 /* ─── Root App ─── */
 export default function App() {
   const [scrolled,      setScrolled]      = useState(false);
-  const [activeDept,    setActiveDept]    = useState<DeptKey>("all");
+  const [activeDept,    setActiveDept]    = useState<string>("all");
   const [mobileOpen,    setMobileOpen]    = useState(false);
   const [view,          setView]          = useState<View>("home");
   const [selectedJob,   setSelectedJob]   = useState<JobDetail | null>(null);
