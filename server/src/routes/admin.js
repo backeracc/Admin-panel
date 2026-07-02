@@ -6,6 +6,7 @@ import Application from '../models/Application.js';
 import User from '../models/User.js';
 import { sendShortlistedEmail } from '../lib/mailer.js';
 import EmployeeProgress from '../models/EmployeeProgress.js';
+import Department from '../models/Department.js';
 
 const router = express.Router();
 
@@ -508,17 +509,45 @@ router.post('/employees/progress', async (req, res) => {
   }
 });
 
-// POST /api/admin/departments/manage - Edit or delete departments (and cascades to jobs/custom overrides)
+// GET /api/admin/departments - Get all departments
+router.get('/departments', async (req, res) => {
+  try {
+    const departments = await Department.find({}).sort({ name: 1 });
+    res.json(departments.map(d => d.name));
+  } catch (error) {
+    console.error('Error fetching departments:', error);
+    res.status(500).json({ error: 'Failed to fetch departments' });
+  }
+});
+
+// POST /api/admin/departments/manage - Manage departments (add, edit, delete)
 router.post('/departments/manage', async (req, res) => {
   try {
     const { action, oldName, newName } = req.body;
-    if (!action || !oldName) {
-      return res.status(400).json({ error: 'action and oldName are required' });
+    if (!action) {
+      return res.status(400).json({ error: 'action is required' });
+    }
+
+    if (action === 'add') {
+      if (!newName) return res.status(400).json({ error: 'newName is required for add action' });
+      await Department.findOneAndUpdate(
+        { name: newName },
+        { name: newName },
+        { upsert: true, new: true }
+      );
+      return res.json({ success: true, message: `Added department "${newName}"` });
+    }
+
+    if (!oldName) {
+      return res.status(400).json({ error: 'oldName is required for edit/delete actions' });
     }
 
     if (action === 'edit') {
       if (!newName) return res.status(400).json({ error: 'newName is required for edit action' });
       
+      // Update Department model
+      await Department.findOneAndUpdate({ name: oldName }, { name: newName }, { upsert: true });
+
       // Update Job categories
       await Job.updateMany({ category: oldName }, { $set: { category: newName } });
       // Update custom department overrides
@@ -528,6 +557,9 @@ router.post('/departments/manage', async (req, res) => {
     }
 
     if (action === 'delete') {
+      // Delete from Department model
+      await Department.deleteOne({ name: oldName });
+
       // Clear custom overrides that match oldName
       await EmployeeProgress.updateMany({ department: oldName }, { $unset: { department: 1 } });
       // Update jobs in this category to general fallback category

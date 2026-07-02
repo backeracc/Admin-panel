@@ -89,13 +89,18 @@ export default function EmployeesPage() {
       setError(null)
       setLastUpdated(new Date())
 
-      // Sync categories dynamically from loaded job categories if any are missing
-      const fromJobsCategories = Array.from(
-        new Set(data.map((emp: any) => emp.job.category).filter(Boolean))
-      ) as string[];
-      if (fromJobsCategories.length > 0) {
+      // Fetch departments from database
+      const deptRes = await fetch('/api/admin/departments');
+      if (deptRes.ok) {
+        const dbDepts = await deptRes.json();
+        // Sync categories dynamically from loaded job categories if any are missing
+        const fromJobsCategories = Array.from(
+          new Set(data.map((emp: any) => emp.job.category).filter(Boolean))
+        ) as string[];
+        
         setDepartments(prev => {
-          const merged = Array.from(new Set([...prev, ...fromJobsCategories]));
+          const merged = Array.from(new Set([...dbDepts, ...fromJobsCategories]));
+          if (merged.length === 0) return defaultDepts;
           localStorage.setItem("admin_categories", JSON.stringify(merged));
           return merged;
         });
@@ -215,14 +220,26 @@ export default function EmployeesPage() {
   }
 
   // Add new department/domain category
-  const handleAddDepartment = () => {
+  const handleAddDepartment = async () => {
     const newDept = prompt("Add new department/domain name:")?.trim();
     if (!newDept) return;
-    const merged = Array.from(new Set([...departments, newDept]));
-    setDepartments(merged);
-    localStorage.setItem("admin_categories", JSON.stringify(merged));
-    setSelectedDept(newDept);
-    setSelectedEmployeeId(null);
+    try {
+      const res = await fetch('/api/admin/departments/manage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add', newName: newDept })
+      });
+      if (!res.ok) throw new Error('Failed to add department');
+
+      const merged = Array.from(new Set([...departments, newDept]));
+      setDepartments(merged);
+      localStorage.setItem("admin_categories", JSON.stringify(merged));
+      setSelectedDept(newDept);
+      setSelectedEmployeeId(null);
+      await load();
+    } catch (err: any) {
+      alert(err.message || 'Error adding department.');
+    }
   }
 
   // Rename department/domain category
@@ -232,7 +249,7 @@ export default function EmployeesPage() {
     if (!newDeptName || newDeptName === selectedDept) return;
 
     try {
-      const res = await fetch('/api/departments/manage', {
+      const res = await fetch('/api/admin/departments/manage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'edit', oldName: selectedDept, newName: newDeptName })
@@ -257,7 +274,7 @@ export default function EmployeesPage() {
     if (!confirm(`Are you sure you want to delete the "${selectedDept}" department? Associated jobs will revert to Web Development.`)) return;
 
     try {
-      const res = await fetch('/api/departments/manage', {
+      const res = await fetch('/api/admin/departments/manage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'delete', oldName: selectedDept })
