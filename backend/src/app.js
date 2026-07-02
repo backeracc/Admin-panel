@@ -12,8 +12,23 @@ dotenv.config();
 const app = express();
 
 // Standard Middlewares
+const allowedOrigins = [
+  'http://localhost:5173', // Public hiring frontend (Updated-lsm)
+  'http://localhost:3000', // Admin client panel
+  'http://localhost:3001', // Backend itself (for curl tests)
+  'http://localsm.tech',
+  'https://localsm.tech',
+  process.env.CLIENT_URL,
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`CORS blocked: ${origin}`));
+  },
   credentials: true
 }));
 app.use(express.json());

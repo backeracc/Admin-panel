@@ -10,11 +10,29 @@ import Department from '../models/Department.js';
 
 const router = express.Router();
 
+// Helper: resolve a job by MongoDB _id OR custom string id field
+const findJobByAnyId = async (paramId, session = null) => {
+  const opts = session ? { session } : {};
+  // Try MongoDB ObjectId first
+  if (mongoose.isValidObjectId(paramId)) {
+    const byMongoId = await Job.findById(paramId, null, opts);
+    if (byMongoId) return byMongoId;
+  }
+  // Fall back to custom string id field
+  return Job.findOne({ id: paramId }, null, opts);
+};
+
 // GET /api/admin/jobs - Get all jobs ordered newest first
 router.get('/jobs', async (req, res) => {
   try {
     const jobs = await Job.find({}).sort({ createdAt: -1 });
-    res.json(jobs);
+    // Ensure every job has an `id` field for the frontend, falling back to _id
+    const formattedJobs = jobs.map(j => {
+      const obj = j.toJSON();
+      obj.id = obj.id || obj._id.toString();
+      return obj;
+    });
+    res.json(formattedJobs);
   } catch (error) {
     console.error('Error fetching jobs:', error);
     res.status(500).json({ error: 'Failed to fetch jobs' });
@@ -39,6 +57,7 @@ router.post('/jobs', async (req, res) => {
     } = req.body;
 
     const job = new Job({
+      id: req.body.id || new mongoose.Types.ObjectId().toString(),
       title,
       category,
       description,
@@ -63,7 +82,9 @@ router.post('/jobs', async (req, res) => {
       );
     }
 
-    res.status(201).json(job);
+    const jobObj = job.toJSON();
+    jobObj.id = jobObj.id || jobObj._id.toString();
+    res.status(201).json(jobObj);
   } catch (error) {
     console.error('Error creating job:', error);
     res.status(500).json({ error: 'Failed to create job' });
@@ -82,10 +103,14 @@ router.get('/applications', async (req, res) => {
     // Format output to match client expectation (user and job objects directly populated)
     const formatted = applications.map(app => {
       const appObj = app.toJSON();
+      // For public applicants, user won't populate — use stored applicantName/Email instead
+      const displayUser = appObj.user || {
+        name: appObj.applicantName || 'Public Applicant',
+        email: appObj.applicantEmail || 'N/A'
+      };
       return {
         ...appObj,
-        // Fallbacks in case user or job is not populated
-        user: appObj.user || { name: 'Unknown User', email: 'unknown@localsm.com' },
+        user: displayUser,
         job: appObj.job || { title: 'Unknown Job', category: 'General' }
       };
     });
@@ -200,17 +225,23 @@ router.patch('/jobs/:id', async (req, res) => {
     }
     if (isOpen !== undefined) updateData.isOpen = !!isOpen;
 
-    const job = await Job.findByIdAndUpdate(
-      req.params.id,
-      { $set: updateData },
-      { new: true, runValidators: true }
-    );
-
+    // Support both MongoDB _id and custom string id from client
+    let job = await findJobByAnyId(req.params.id);
     if (!job) {
       return res.status(404).json({ error: 'Job not found' });
     }
+    job = await Job.findByIdAndUpdate(
+      job._id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found after update' });
+    }
 
-    res.json(job);
+    const jobObj = job.toJSON();
+    jobObj.id = jobObj.id || jobObj._id.toString();
+    res.json(jobObj);
   } catch (error) {
     console.error('Error updating job:', error);
     res.status(500).json({ error: 'Failed to update job' });
@@ -222,19 +253,26 @@ router.delete('/jobs/:id', async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const jobId = req.params.id;
+    const paramId = req.params.id;
 
-    // 1. Delete all applications related to this job
-    await Application.deleteMany({ jobId }).session(session);
-
-    // 2. Delete the job
-    const job = await Job.findByIdAndDelete(jobId).session(session);
-
+    // Resolve by either MongoDB _id or custom string id (client sends custom string id)
+    const job = await findJobByAnyId(paramId, session);
     if (!job) {
       await session.abortTransaction();
       session.endSession();
       return res.status(404).json({ error: 'Job not found' });
     }
+
+    const mongoId = job._id;
+    const customStringId = job.id || mongoId.toString();
+
+    // 1. Delete all applications — they store either form of id
+    await Application.deleteMany({
+      $or: [{ jobId: customStringId }, { jobId: mongoId.toString() }]
+    }).session(session);
+
+    // 2. Delete the job by its real MongoDB _id
+    await Job.findByIdAndDelete(mongoId).session(session);
 
     await session.commitTransaction();
     session.endSession();

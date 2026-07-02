@@ -44,6 +44,7 @@ export default function JobsPage() {
   const [questionSuggestions, setQuestionSuggestions] = useState<string[]>([])
   const [questionInput, setQuestionInput] = useState("")
   const [editingJobId, setEditingJobId] = useState<string | null>(null)
+  const [jobToDelete, setJobToDelete] = useState<Job | null>(null)
   
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -306,16 +307,17 @@ export default function JobsPage() {
   }
 
   // Delete action
-  const deleteJob = async (job: Job) => {
-    const confirmed = window.confirm(`Delete "${job.title}"? This will also permanently delete any related applications.`)
-    if (!confirmed) return
+  const confirmDeleteJob = async () => {
+    if (!jobToDelete) return;
     
     try {
-      const res = await fetch(`/api/admin/jobs/${job.id}`, { method: "DELETE" })
+      const res = await fetch(`/api/admin/jobs/${jobToDelete.id}`, { method: "DELETE" })
       if (!res.ok) throw new Error()
+      setJobToDelete(null)
       await load()
     } catch (err) {
       alert('Failed to delete job.')
+      setJobToDelete(null)
     }
   }
 
@@ -621,7 +623,7 @@ export default function JobsPage() {
                     <button
                       className="btn btn-danger btn-sm"
                       style={{ padding: '0.4rem 0.6rem' }}
-                      onClick={() => deleteJob(j)}
+                      onClick={() => setJobToDelete(j)}
                     >
                       Delete
                     </button>
@@ -632,6 +634,37 @@ export default function JobsPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {jobToDelete && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>Confirm Delete</h3>
+              <button className={styles.modalClose} onClick={() => setJobToDelete(null)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.alertBox}>
+                <AlertCircle size={24} className={styles.alertIcon} />
+                <div>
+                  <p>Are you sure you want to delete the job <strong>"{jobToDelete.title}"</strong>?</p>
+                  <p className={styles.alertSubtitle}>This action cannot be undone and will permanently delete any related applications.</p>
+                </div>
+              </div>
+            </div>
+            <div className={styles.modalFooter}>
+              <button className="btn btn-ghost" onClick={() => setJobToDelete(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-danger" onClick={confirmDeleteJob}>
+                Delete Permanently
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

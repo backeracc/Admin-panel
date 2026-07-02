@@ -27,8 +27,6 @@ export default function LoginPage() {
     }
   }
 
-  const fill = (e: string, p: string) => { setEmail(e); setPassword(p) }
-
   return (
     <div className={styles.page}>
       {/* Left hero panel */}
@@ -132,28 +130,6 @@ export default function LoginPage() {
               </>
             )}
           </button>
-
-          {/* Demo quick-fill */}
-          <div className={styles.demoSection}>
-            <div className={styles.demoLabel}>Quick demo logins</div>
-            <div className={styles.demoGrid}>
-              {[
-                { role: 'Admin', email: 'admin@localsm.com', pass: 'admin123' },
-                { role: 'HR', email: 'hr@localsm.com', pass: 'hr123' },
-                { role: 'Manager', email: 'manager@localsm.com', pass: 'mgr123' },
-                { role: 'Employee', email: 'employee@localsm.com', pass: 'emp123' },
-              ].map(d => (
-                <button
-                  key={d.role}
-                  type="button"
-                  className={styles.demoBtn}
-                  onClick={() => fill(d.email, d.pass)}
-                >
-                  {d.role}
-                </button>
-              ))}
-            </div>
-          </div>
         </form>
       </div>
     </div>

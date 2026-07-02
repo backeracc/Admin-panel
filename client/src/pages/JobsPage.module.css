@@ -300,3 +300,112 @@
     justify-content: flex-end;
   }
 }
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modalContent {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  width: 90%;
+  max-width: 480px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalIn 0.2s ease-out;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modalHeader {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modalTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.modalClose {
+  background: transparent;
+  border: none;
+  color: var(--muted-fg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+}
+
+.modalClose:hover {
+  background: var(--secondary);
+  color: var(--foreground);
+}
+
+.modalBody {
+  padding: 1.5rem;
+}
+
+.alertBox {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  background: var(--color-danger-muted);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.alertIcon {
+  color: var(--color-danger);
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.alertBox p {
+  margin: 0 0 0.5rem 0;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  line-height: 1.4;
+}
+
+.alertBox .alertSubtitle {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-danger);
+  opacity: 0.9;
+}
+
+.modalFooter {
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background: var(--secondary);
+}

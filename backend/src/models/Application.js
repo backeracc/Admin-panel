@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 const applicationSchema = new mongoose.Schema(
   {
     id: { type: String },
+    applicantName: { type: String, default: '' },   // For public applicants (no account)
+    applicantEmail: { type: String, default: '' },  // For public applicants (no account)
     userId: { type: String, required: true },
     jobId: { type: String, required: true },
     resume: { type: String, default: '' },

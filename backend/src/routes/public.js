@@ -15,12 +15,34 @@ cloudinary.config({
 });
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() }); // store file in memory to upload to cloudinary
 
-const uploadToCloudinary = (buffer) => {
+// 10 MB file size limit, memory storage for Cloudinary streaming
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    if (allowed.includes(file.mimetype)) return cb(null, true);
+    cb(new Error('Only PDF and Word documents (.pdf, .doc, .docx) are allowed'));
+  }
+});
+
+// ── Helper: stream buffer to Cloudinary ──────────────────────────────────────
+const uploadToCloudinary = (buffer, originalName) => {
   return new Promise((resolve, reject) => {
+    const safeName = (originalName || 'resume').replace(/\s+/g, '_');
     const stream = cloudinary.uploader.upload_stream(
-      { resource_type: 'auto', folder: 'resumes' },
+      {
+        resource_type: 'raw',
+        folder: 'resumes',
+        use_filename: true,
+        unique_filename: true,
+        public_id: `resumes/${Date.now()}_${safeName}`,
+      },
       (error, result) => {
         if (error) return reject(error);
         resolve(result);
@@ -30,21 +52,31 @@ const uploadToCloudinary = (buffer) => {
   });
 };
 
-// GET /api/public/jobs - Get all open jobs
+// ── GET /api/public/jobs ─ All open jobs ─────────────────────────────────────
 router.get('/jobs', async (req, res) => {
   try {
     const jobs = await Job.find({ isOpen: true }).sort({ createdAt: -1 });
-    res.json(jobs);
+    const formattedJobs = jobs.map(j => {
+      const obj = j.toJSON();
+      obj.id = obj.id || obj._id.toString();
+      return obj;
+    });
+    res.json(formattedJobs);
   } catch (error) {
     console.error('Error fetching jobs:', error);
     res.status(500).json({ error: 'Failed to fetch jobs' });
   }
 });
 
-// GET /api/public/jobs/:id - Get specific job details
+// ── GET /api/public/jobs/:id ─ Single job details ────────────────────────────
 router.get('/jobs/:id', async (req, res) => {
   try {
-    const job = await Job.findOne({ id: req.params.id, isOpen: true }) || await Job.findById(req.params.id).catch(() => null);
+    const paramId = req.params.id;
+    // Try custom string id first, then MongoDB _id
+    let job = await Job.findOne({ id: paramId, isOpen: true });
+    if (!job && mongoose.isValidObjectId(paramId)) {
+      job = await Job.findById(paramId);
+    }
     if (!job) {
       return res.status(404).json({ error: 'Job not found' });
     }
@@ -55,59 +87,71 @@ router.get('/jobs/:id', async (req, res) => {
   }
 });
 
-// POST /api/public/apply - Submit a job application
+// ── POST /api/public/apply ─ Submit application ───────────────────────────────
 router.post('/apply', upload.single('resume'), async (req, res) => {
   try {
-    const {
-      jobId,
-      name,
-      email,
-      phone,
-      linkedin,
-      portfolio,
-      github,
-      customAnswers
-    } = req.body;
+    const { jobId, name, email, phone, linkedin, portfolio, github, customAnswers } = req.body;
 
+    // Validate required fields
     if (!jobId || !name || !email || !phone) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      return res.status(400).json({
+        error: 'Missing required fields: jobId, name, email, and phone are required'
+      });
     }
 
+    // Look up the actual job to confirm it exists
+    let job = null;
+    if (mongoose.isValidObjectId(jobId)) {
+      job = await Job.findById(jobId);
+    }
+    if (!job) {
+      job = await Job.findOne({ id: jobId });
+    }
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found. Please refresh and try again.' });
+    }
+
+    // Parse custom answers
     let parsedAnswers = [];
     if (customAnswers) {
       try {
         parsedAnswers = typeof customAnswers === 'string' ? JSON.parse(customAnswers) : customAnswers;
       } catch (e) {
-        console.error('Failed to parse customAnswers:', e);
+        console.warn('Failed to parse customAnswers:', e.message);
       }
     }
 
-    let uploadedResumeUrl = '';
-    
-    // Upload to Cloudinary if file exists
+    // Upload resume to Cloudinary
+    let resumeUrl = '';
+    let cloudinaryWarning = null;
     if (req.file) {
       try {
-        const result = await uploadToCloudinary(req.file.buffer);
-        uploadedResumeUrl = result.secure_url;
+        console.log(`[Cloudinary] Uploading: ${req.file.originalname} (${req.file.size} bytes)`);
+        const result = await uploadToCloudinary(req.file.buffer, req.file.originalname);
+        resumeUrl = result.secure_url;
+        console.log(`[Cloudinary] Success: ${resumeUrl}`);
       } catch (uploadError) {
-        console.error('Cloudinary upload error:', uploadError);
-        return res.status(500).json({ error: 'Failed to upload resume file' });
+        // Non-fatal: save application but warn about missing resume
+        cloudinaryWarning = `Resume upload failed (${uploadError.message}). Application saved without resume.`;
+        console.error('[Cloudinary] Upload failed (non-fatal):', uploadError.message);
       }
     } else if (req.body.resumeUrl) {
-      // Fallback if frontend sends a URL directly
-      uploadedResumeUrl = req.body.resumeUrl;
+      resumeUrl = req.body.resumeUrl;
     }
 
+    // Create the application record
     const newApp = new Application({
       id: new mongoose.Types.ObjectId().toString(),
-      jobId,
-      userId: `public_${Date.now()}`,
+      jobId: job.id || job._id.toString(),
+      userId: `public::${email}`,   // stable public identifier (no user account needed)
+      applicantName: name,           // stored directly for admin panel display
+      applicantEmail: email,
       phone,
       linkedin: linkedin || '',
       portfolio: portfolio || '',
       github: github || '',
-      resume: uploadedResumeUrl, // stores the cloudinary URL
-      resumeFileUrl: uploadedResumeUrl, // explicit field in schema
+      resume: resumeUrl,
+      resumeFileUrl: resumeUrl,
       resumeFileName: req.file ? req.file.originalname : '',
       resumeMimeType: req.file ? req.file.mimetype : '',
       customAnswers: parsedAnswers,
@@ -115,10 +159,22 @@ router.post('/apply', upload.single('resume'), async (req, res) => {
     });
 
     await newApp.save();
-    res.status(201).json({ message: 'Application submitted successfully', application: newApp });
+
+    console.log(`[Apply] Saved: ${newApp._id} | Job: "${job.title}" | ${name} <${email}>`);
+
+    res.status(201).json({
+      success: true,
+      message: cloudinaryWarning
+        ? 'Application submitted! (Resume upload had an issue — please check Cloudinary config)'
+        : 'Application submitted successfully!',
+      applicationId: newApp._id,
+      jobTitle: job.title,
+      resumeUrl: resumeUrl || null,
+      warning: cloudinaryWarning || undefined
+    });
   } catch (error) {
-    console.error('Error submitting application:', error);
-    res.status(500).json({ error: 'Failed to submit application' });
+    console.error('[Apply] Error:', error);
+    res.status(500).json({ error: 'Failed to submit application', detail: error.message });
   }
 });
 

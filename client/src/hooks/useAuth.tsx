@@ -29,15 +29,7 @@ const MOCK_USERS: Record<string, User & { password: string }> = {
   'hr@localsm.com': {
     id: '2', name: 'Priya Thapa', email: 'hr@localsm.com', password: 'hr123',
     role: 'hr', department: 'Human Resources', employeeCode: 'LSM-0002',
-  },
-  'manager@localsm.com': {
-    id: '3', name: 'Bikash Rai', email: 'manager@localsm.com', password: 'mgr123',
-    role: 'manager', department: 'Engineering', employeeCode: 'LSM-0003',
-  },
-  'employee@localsm.com': {
-    id: '4', name: 'Sita Gurung', email: 'employee@localsm.com', password: 'emp123',
-    role: 'employee', department: 'Engineering', employeeCode: 'LSM-0004',
-  },
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
