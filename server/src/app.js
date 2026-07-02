@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import adminRoutes from './routes/admin.js';
+import publicRoutes from './routes/public.js';
 
 // Load environment variables
 dotenv.config();
@@ -25,8 +26,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// Register Admin Routes
+// Register Routes
 app.use('/api/admin', adminRoutes);
+app.use('/api/public', publicRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

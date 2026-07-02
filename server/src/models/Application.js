@@ -30,6 +30,12 @@ const applicationSchema = new mongoose.Schema(
         createdAt: { type: Date, default: Date.now }
       }
     ],
+    customAnswers: [
+      {
+        question: String,
+        answer: String
+      }
+    ]
   },
   { timestamps: true, collection: 'application' }
 );
