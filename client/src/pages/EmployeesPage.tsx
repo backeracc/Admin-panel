@@ -74,6 +74,10 @@ export default function EmployeesPage() {
   const [newEmpRole, setNewEmpRole] = useState('')
   const [newEmpProject, setNewEmpProject] = useState('Onboarding & Training')
   const [isCreatingEmp, setIsCreatingEmp] = useState(false)
+  
+  // Department Modal State
+  const [showAddDeptModal, setShowAddDeptModal] = useState(false)
+  const [newDeptInput, setNewDeptInput] = useState('')
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -220,9 +224,15 @@ export default function EmployeesPage() {
   }
 
   // Add new department/domain category
-  const handleAddDepartment = async () => {
-    const newDept = prompt("Add new department/domain name:")?.trim();
-    if (!newDept) return;
+  const handleOpenAddDeptModal = () => {
+    setNewDeptInput('')
+    setShowAddDeptModal(true)
+  }
+
+  const handleSaveNewDepartment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const newDept = newDeptInput.trim()
+    if (!newDept) return
     try {
       const res = await fetch('/api/admin/departments/manage', {
         method: 'POST',
@@ -236,12 +246,13 @@ export default function EmployeesPage() {
       localStorage.setItem("admin_categories", JSON.stringify(merged));
       setSelectedDept(newDept);
       setSelectedEmployeeId(null);
+      setShowAddDeptModal(false);
+      setNewDeptInput('');
       await load();
     } catch (err: any) {
       alert(err.message || 'Error adding department.');
     }
   }
-
   // Rename department/domain category
   const handleEditDepartment = async () => {
     if (selectedDept === 'All') return;
@@ -405,7 +416,7 @@ export default function EmployeesPage() {
         {/* + Add Department */}
         <button
           className={styles.addDeptBtn}
-          onClick={handleAddDepartment}
+          onClick={handleOpenAddDeptModal}
           title="Add a new department/domain"
         >
           <Plus size={13} /> Add Department
@@ -749,6 +760,38 @@ export default function EmployeesPage() {
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={isCreatingEmp}>
                   {isCreatingEmp ? 'Creating...' : 'Onboard Employee'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Department Modal */}
+      {showAddDeptModal && (
+        <div className={styles.modalOverlay} onClick={(e) => {
+          if (e.target === e.currentTarget) setShowAddDeptModal(false)
+        }}>
+          <div className={styles.modalContent} style={{ maxWidth: '400px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '1.5rem', color: 'var(--fg)' }}>Add New Department</h3>
+            <form onSubmit={handleSaveNewDepartment} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--muted-fg)' }}>DEPARTMENT NAME</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Finance"
+                  className={styles.addTaskInput}
+                  value={newDeptInput}
+                  onChange={(e) => setNewDeptInput(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                <button type="button" className="btn btn-ghost" onClick={() => setShowAddDeptModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={!newDeptInput.trim()}>
+                  Add Department
                 </button>
               </div>
             </form>
