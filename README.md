@@ -71,3 +71,20 @@ npm run dev
 npm install
 npm run dev
 ```
+
+## Running via Docker (Recommended)
+
+You can run the entire platform identically on any system with a single command using Docker Compose. Ensure you have Docker and Docker Compose installed.
+
+From the root of the project, simply run:
+
+```bash
+docker-compose up --build
+```
+
+This will automatically:
+1. Build and start the **Backend API** on port `3001` (using variables from `backend/.env`).
+2. Build and start the **Admin Panel** on port `3000`.
+3. Build and start the **Public Hiring Portal** on port `5173`.
+
+*Note: Ensure your `backend/.env` is correctly populated with your MongoDB Atlas and Cloudinary credentials before running the container.*
