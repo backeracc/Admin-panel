@@ -257,7 +257,7 @@ function ApplyModal({ job, onClose }: { job: JobDetail; onClose: () => void }) {
     }
 
     try {
-      const res = await fetch("http://localhost:3001/api/public/apply", {
+      const res = await fetch("/api/public/apply", {
         method: "POST",
         body: formData,
       });
@@ -901,7 +901,7 @@ export default function App() {
   const [backendJobs,   setBackendJobs]   = useState<JobDetail[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:3001/api/public/jobs")
+    fetch("/api/public/jobs")
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
