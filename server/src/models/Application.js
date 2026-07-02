@@ -2,8 +2,9 @@ import mongoose from 'mongoose';
 
 const applicationSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    jobId: { type: mongoose.Schema.Types.ObjectId, ref: 'Job', required: true },
+    id: { type: String },
+    userId: { type: String, required: true },
+    jobId: { type: String, required: true },
     resume: { type: String, default: '' },
     resumeFileUrl: { type: String },
     resumeFileKey: { type: String },
@@ -30,21 +31,21 @@ const applicationSchema = new mongoose.Schema(
       }
     ],
   },
-  { timestamps: true }
+  { timestamps: true, collection: 'application' }
 );
 
 // Virtuals to map to user/job for client consumption
 applicationSchema.virtual('user', {
   ref: 'User',
   localField: 'userId',
-  foreignField: '_id',
+  foreignField: 'id',
   justOne: true
 });
 
 applicationSchema.virtual('job', {
   ref: 'Job',
   localField: 'jobId',
-  foreignField: '_id',
+  foreignField: 'id',
   justOne: true
 });
 

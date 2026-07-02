@@ -64,8 +64,8 @@ router.get('/applications', async (req, res) => {
   try {
     // Populate user and job
     const applications = await Application.find({})
-      .populate('userId', 'name email role')
-      .populate('jobId', 'title category')
+      .populate('user', 'name email role')
+      .populate('job', 'title category')
       .sort({ createdAt: -1 });
 
     // Format output to match client expectation (user and job objects directly populated)
@@ -74,8 +74,8 @@ router.get('/applications', async (req, res) => {
       return {
         ...appObj,
         // Fallbacks in case user or job is not populated
-        user: appObj.userId || { name: 'Unknown User', email: 'unknown@localsm.com' },
-        job: appObj.jobId || { title: 'Unknown Job', category: 'General' }
+        user: appObj.user || { name: 'Unknown User', email: 'unknown@localsm.com' },
+        job: appObj.job || { title: 'Unknown Job', category: 'General' }
       };
     });
 
@@ -322,14 +322,14 @@ router.patch('/applications/:id', async (req, res) => {
     if (previousStatus !== 'SHORTLISTED' && nextStatus === 'SHORTLISTED') {
       try {
         const populatedApp = await Application.findById(appId)
-          .populate('userId', 'name email')
-          .populate('jobId', 'title');
+          .populate('user', 'name email')
+          .populate('job', 'title');
 
-        if (populatedApp && populatedApp.userId) {
+        if (populatedApp && populatedApp.user) {
           const mailResult = await sendShortlistedEmail({
-            candidateName: populatedApp.userId.name || 'Candidate',
-            candidateEmail: populatedApp.userId.email || '',
-            jobRole: populatedApp.jobId?.title || 'the role'
+            candidateName: populatedApp.user.name || 'Candidate',
+            candidateEmail: populatedApp.user.email || '',
+            jobRole: populatedApp.job?.title || 'the role'
           });
 
           if (!mailResult.success) {
@@ -400,8 +400,8 @@ router.get('/employees/progress', async (req, res) => {
   try {
     // 1. Get all applications where status is 'HIRED'
     const hiredApplications = await Application.find({ status: 'HIRED' })
-      .populate('userId', 'name email role')
-      .populate('jobId', 'title category')
+      .populate('user', 'name email role')
+      .populate('job', 'title category')
       .sort({ updatedAt: -1 });
 
     const formattedEmployees = [];
@@ -426,10 +426,10 @@ router.get('/employees/progress', async (req, res) => {
       const appObj = app.toJSON();
       formattedEmployees.push({
         applicationId: app._id,
-        user: appObj.userId || { name: 'Unknown Candidate', email: 'unknown@localsm.com' },
+        user: appObj.user || { name: 'Unknown Candidate', email: 'unknown@localsm.com' },
         job: {
-          title: progress.role || (appObj.jobId ? appObj.jobId.title : 'Hired Employee'),
-          category: progress.department || (appObj.jobId ? appObj.jobId.category : 'Web Development')
+          title: progress.role || (appObj.job ? appObj.job.title : 'Hired Employee'),
+          category: progress.department || (appObj.job ? appObj.job.category : 'Web Development')
         },
         currentProject: progress.currentProject,
         tasks: progress.tasks,

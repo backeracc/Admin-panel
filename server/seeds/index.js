@@ -39,6 +39,7 @@ const seedDatabase = async () => {
     // 3. Create Users
     const hashedPassword = await bcrypt.hash('admin123', 12);
     const adminUser = new User({
+      name: 'System Admin',
       email: 'admin@localsm.com',
       passwordHash: hashedPassword,
       role: 'admin',
@@ -47,15 +48,14 @@ const seedDatabase = async () => {
     });
     await adminUser.save();
 
-    const candidateUser = new User({
-      email: 'candidate@example.com',
-      passwordHash: hashedPassword,
-      role: 'employee',
-      organizationId: org._id,
-      isActive: true
-    });
-    await candidateUser.save();
-    console.log('👤 Created Users (admin@localsm.com & candidate@example.com)');
+    const candidates = await User.insertMany([
+      { name: 'John Doe', email: 'john@example.com', passwordHash: hashedPassword, role: 'employee', organizationId: org._id, isActive: true },
+      { name: 'Alice Smith', email: 'alice@example.com', passwordHash: hashedPassword, role: 'employee', organizationId: org._id, isActive: true },
+      { name: 'Bob Johnson', email: 'bob@example.com', passwordHash: hashedPassword, role: 'employee', organizationId: org._id, isActive: true },
+      { name: 'Emma Watson', email: 'emma@example.com', passwordHash: hashedPassword, role: 'employee', organizationId: org._id, isActive: true },
+      { name: 'Sarah Connor', email: 'sarah@example.com', passwordHash: hashedPassword, role: 'employee', organizationId: org._id, isActive: true }
+    ]);
+    console.log('👤 Created Users with names');
 
     // 4. Create Jobs
     const jobsData = [
@@ -122,7 +122,7 @@ const seedDatabase = async () => {
 
     const applicationsData = [
       {
-        userId: candidateUser._id,
+        userId: candidates[0]._id,
         jobId: seededJobs[0]._id, // Senior Frontend
         resume: 'John_Doe_Frontend_Resume.pdf',
         phone: '+91 9999988888',
@@ -133,7 +133,7 @@ const seedDatabase = async () => {
         createdAt: new Date(now.getTime() - 10 * day) // 10 days ago (Old applicant)
       },
       {
-        userId: candidateUser._id,
+        userId: candidates[1]._id,
         jobId: seededJobs[0]._id, // Senior Frontend
         resume: 'Alice_Smith_Resume.pdf',
         phone: '+91 9876543219',
@@ -144,7 +144,7 @@ const seedDatabase = async () => {
         createdAt: new Date(now.getTime() - 3 * day) // 3 days ago (New applicant)
       },
       {
-        userId: candidateUser._id,
+        userId: candidates[2]._id,
         jobId: seededJobs[1]._id, // Backend Engineer
         resume: 'Bob_Johnson_Resume.pdf',
         phone: '+91 8888877777',
@@ -155,7 +155,7 @@ const seedDatabase = async () => {
         createdAt: new Date(now.getTime() - 2 * day) // 2 days ago (New applicant)
       },
       {
-        userId: candidateUser._id,
+        userId: candidates[3]._id,
         jobId: seededJobs[2]._id, // UI UX Designer (Closed job)
         resume: 'Emma_Watson_Portfolio.pdf',
         phone: '+91 7777766666',
@@ -166,7 +166,7 @@ const seedDatabase = async () => {
         createdAt: new Date(now.getTime() - 12 * day) // 12 days ago (Old applicant)
       },
       {
-        userId: candidateUser._id,
+        userId: candidates[4]._id,
         jobId: seededJobs[3]._id, // HR Manager
         resume: 'Sarah_Connor_Resume.pdf',
         phone: '+977 9801234567',

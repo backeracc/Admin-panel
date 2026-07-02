@@ -4,6 +4,8 @@ import { ROLES } from '../config/constants.js';
 
 const userSchema = new mongoose.Schema(
   {
+    id: { type: String },
+    name: { type: String, trim: true },
     email: { type: String, required: true, unique: true, trim: true, lowercase: true },
     passwordHash: { type: String, required: true, select: false },
     phone: { type: String, trim: true },
@@ -27,7 +29,7 @@ const userSchema = new mongoose.Schema(
     passwordResetToken: String,
     passwordResetExpires: Date,
   },
-  { timestamps: true }
+  { timestamps: true, collection: 'user' }
 );
 
 // Index for fast lookups

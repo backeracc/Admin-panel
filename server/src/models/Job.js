@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const jobSchema = new mongoose.Schema(
   {
+    id: { type: String },
     title: { type: String, required: true },
     category: { type: String, required: true },
     description: { type: String, required: true },
@@ -15,7 +16,7 @@ const jobSchema = new mongoose.Schema(
     isOpen: { type: Boolean, default: true },
     organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization' },
   },
-  { timestamps: true }
+  { timestamps: true, collection: 'job' }
 );
 
 export default mongoose.model('Job', jobSchema);
