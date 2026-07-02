@@ -33,11 +33,14 @@ The backend administrative portal is restricted to authorized personnel. The qui
 
 ## Environment Setup
 
-Ensure the `.env` file in the `backend` directory is properly configured with your Cloudinary and MongoDB credentials:
+Create a `.env` file in the `backend` directory based on the provided `.env.example` file. This is necessary to configure your database and Cloudinary storage for resumes:
 
-```
-MONGODB_URI=your_mongodb_connection_string
+```env
+# backend/.env
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>
 PORT=3001
+
+# Cloudinary Storage
 CLOUDINARY_URL=cloudinary://<API_KEY>:<API_SECRET>@<CLOUD_NAME>
 CLOUDINARY_CLOUD_NAME=<CLOUD_NAME>
 CLOUDINARY_API_KEY=<API_KEY>
