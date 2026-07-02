@@ -593,8 +593,11 @@ router.post('/employees/manual', async (req, res) => {
       const org = await mongoose.model('Organization').findOne({}).session(session);
       const orgId = org ? org._id : new mongoose.Types.ObjectId();
       
+      const newId = new mongoose.Types.ObjectId().toString();
       user = new User({
+        id: newId,
         email,
+        name,
         passwordHash: await bcrypt.hash('welcome123', 12),
         role: 'employee',
         organizationId: orgId
@@ -609,6 +612,7 @@ router.post('/employees/manual', async (req, res) => {
     }
     if (!job) {
       job = new Job({
+        id: new mongoose.Types.ObjectId().toString(),
         title: role || 'Hired Intern',
         category: department || 'Web Development',
         description: 'Manual hire position',
@@ -622,8 +626,9 @@ router.post('/employees/manual', async (req, res) => {
 
     // 3. Create Application
     const app = new Application({
-      userId: user._id,
-      jobId: job._id,
+      id: new mongoose.Types.ObjectId().toString(),
+      userId: user.id || user._id.toString(),
+      jobId: job.id || job._id.toString(),
       phone,
       location: location || 'Remote',
       status: 'HIRED',
