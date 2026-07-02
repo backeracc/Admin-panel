@@ -3,9 +3,32 @@ import mongoose from 'mongoose';
 import Job from '../models/Job.js';
 import Application from '../models/Application.js';
 import multer from 'multer';
+import { v2 as cloudinary } from 'cloudinary';
+import dotenv from 'dotenv';
+dotenv.config();
+
+// Configure cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 const router = express.Router();
-const upload = multer(); // basic multer setup in case they use multipart/form-data
+const upload = multer({ storage: multer.memoryStorage() }); // store file in memory to upload to cloudinary
+
+const uploadToCloudinary = (buffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { resource_type: 'auto', folder: 'resumes' },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    stream.end(buffer);
+  });
+};
 
 // GET /api/public/jobs - Get all open jobs
 router.get('/jobs', async (req, res) => {
@@ -33,7 +56,7 @@ router.get('/jobs/:id', async (req, res) => {
 });
 
 // POST /api/public/apply - Submit a job application
-router.post('/apply', upload.any(), async (req, res) => {
+router.post('/apply', upload.single('resume'), async (req, res) => {
   try {
     const {
       jobId,
@@ -43,8 +66,7 @@ router.post('/apply', upload.any(), async (req, res) => {
       linkedin,
       portfolio,
       github,
-      customAnswers, // Expected as a JSON string if multipart, or array if JSON
-      resumeUrl // in case the frontend uploads to s3 and passes url
+      customAnswers
     } = req.body;
 
     if (!jobId || !name || !email || !phone) {
@@ -60,15 +82,34 @@ router.post('/apply', upload.any(), async (req, res) => {
       }
     }
 
+    let uploadedResumeUrl = '';
+    
+    // Upload to Cloudinary if file exists
+    if (req.file) {
+      try {
+        const result = await uploadToCloudinary(req.file.buffer);
+        uploadedResumeUrl = result.secure_url;
+      } catch (uploadError) {
+        console.error('Cloudinary upload error:', uploadError);
+        return res.status(500).json({ error: 'Failed to upload resume file' });
+      }
+    } else if (req.body.resumeUrl) {
+      // Fallback if frontend sends a URL directly
+      uploadedResumeUrl = req.body.resumeUrl;
+    }
+
     const newApp = new Application({
       id: new mongoose.Types.ObjectId().toString(),
       jobId,
-      userId: `public_${Date.now()}`, // Generic user ID for public applicants without accounts
+      userId: `public_${Date.now()}`,
       phone,
       linkedin: linkedin || '',
       portfolio: portfolio || '',
       github: github || '',
-      resume: resumeUrl || '',
+      resume: uploadedResumeUrl, // stores the cloudinary URL
+      resumeFileUrl: uploadedResumeUrl, // explicit field in schema
+      resumeFileName: req.file ? req.file.originalname : '',
+      resumeMimeType: req.file ? req.file.mimetype : '',
       customAnswers: parsedAnswers,
       status: 'PENDING'
     });
