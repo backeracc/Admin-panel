@@ -160,7 +160,7 @@ router.post('/applications', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const jobExists = await Job.findById(jobId);
+    const jobExists = await findJobByAnyId(jobId);
     if (!jobExists) {
       return res.status(404).json({ error: 'Job not found' });
     }
@@ -352,7 +352,7 @@ router.patch('/applications/:id', async (req, res) => {
             : 0;
 
       if (delta !== 0) {
-        const job = await Job.findById(app.jobId).session(session);
+        const job = await findJobByAnyId(app.jobId, session);
         if (!job) {
           await session.abortTransaction();
           session.endSession();
