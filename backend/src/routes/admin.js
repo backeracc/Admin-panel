@@ -300,7 +300,22 @@ router.patch('/applications/:id', async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const { status, note } = req.body;
+    const { 
+      status, 
+      note,
+      applicantName,
+      applicantEmail,
+      phone,
+      linkedin,
+      portfolio,
+      github,
+      location,
+      yearsExperience,
+      currentCompany,
+      expectedSalary,
+      coverLetter,
+      customAnswers 
+    } = req.body;
     const appId = req.params.id;
 
     // Retrieve application
@@ -311,22 +326,49 @@ router.patch('/applications/:id', async (req, res) => {
       return res.status(404).json({ error: 'Application not found' });
     }
 
-    // Mode A: Only adding a note
-    if (note !== undefined && status === undefined) {
-      const trimmedNote = String(note || '').trim();
-      if (!trimmedNote) {
+    // Mode A: Only adding a note, or updating applicant details (no status change)
+    if (status === undefined) {
+      const trimmedNote = note !== undefined ? String(note || '').trim() : '';
+
+      const isDetailsUpdate = [
+        applicantName, applicantEmail, phone, linkedin, portfolio, github,
+        location, yearsExperience, currentCompany, expectedSalary, coverLetter, customAnswers
+      ].some(val => val !== undefined);
+
+      if (!isDetailsUpdate && !trimmedNote && note !== undefined) {
         await session.abortTransaction();
         session.endSession();
         return res.status(400).json({ error: 'Note content cannot be empty' });
       }
 
-      app.notes.push({ note: trimmedNote });
+      if (trimmedNote) {
+        app.notes.push({ note: trimmedNote });
+      }
+
+      // Update fields if provided
+      if (applicantName !== undefined) app.applicantName = applicantName;
+      if (applicantEmail !== undefined) app.applicantEmail = applicantEmail;
+      if (phone !== undefined) app.phone = phone;
+      if (linkedin !== undefined) app.linkedin = linkedin;
+      if (portfolio !== undefined) app.portfolio = portfolio;
+      if (github !== undefined) app.github = github;
+      if (location !== undefined) app.location = location;
+      if (yearsExperience !== undefined) app.yearsExperience = yearsExperience ? Number(yearsExperience) : null;
+      if (currentCompany !== undefined) app.currentCompany = currentCompany;
+      if (expectedSalary !== undefined) app.expectedSalary = expectedSalary;
+      if (coverLetter !== undefined) app.coverLetter = coverLetter;
+      if (customAnswers !== undefined) {
+         try {
+           app.customAnswers = typeof customAnswers === 'string' ? JSON.parse(customAnswers) : customAnswers;
+         } catch(e) {}
+      }
+
       await app.save({ session });
       await session.commitTransaction();
       session.endSession();
 
-      const createdNote = app.notes[app.notes.length - 1];
-      return res.json({ ok: true, note: createdNote });
+      const createdNote = trimmedNote ? app.notes[app.notes.length - 1] : undefined;
+      return res.json({ ok: true, app, note: createdNote });
     }
 
     // Mode B: Updating status (and optional note)
@@ -437,8 +479,8 @@ router.get('/applications/:id/resume', async (req, res) => {
 
     // 1. Redirect if it's an external web URL
     if (legacyResume.startsWith('http://') || legacyResume.startsWith('https://')) {
-      if (req.query.download === '1' && legacyResume.includes('res.cloudinary.com') && legacyResume.includes('/upload/')) {
-        // Force download by injecting Cloudinary's fl_attachment flag
+      if (req.query.download === '1' && legacyResume.includes('res.cloudinary.com') && legacyResume.includes('/image/upload/')) {
+        // Force download by injecting Cloudinary's fl_attachment flag (only works for image/video resources)
         const downloadUrl = legacyResume.replace('/upload/', '/upload/fl_attachment/');
         return res.redirect(downloadUrl);
       }

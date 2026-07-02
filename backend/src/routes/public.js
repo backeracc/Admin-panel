@@ -90,7 +90,21 @@ router.get('/jobs/:id', async (req, res) => {
 // ── POST /api/public/apply ─ Submit application ───────────────────────────────
 router.post('/apply', upload.single('resume'), async (req, res) => {
   try {
-    const { jobId, name, email, phone, linkedin, portfolio, github, customAnswers } = req.body;
+    const { 
+      jobId, 
+      name, 
+      email, 
+      phone, 
+      linkedin, 
+      portfolio, 
+      github, 
+      location, 
+      yearsExperience, 
+      currentCompany, 
+      expectedSalary, 
+      coverLetter, 
+      customAnswers 
+    } = req.body;
 
     // Validate required fields
     if (!jobId || !name || !email || !phone) {
@@ -150,6 +164,11 @@ router.post('/apply', upload.single('resume'), async (req, res) => {
       linkedin: linkedin || '',
       portfolio: portfolio || '',
       github: github || '',
+      location: location || '',
+      yearsExperience: yearsExperience || '',
+      currentCompany: currentCompany || '',
+      expectedSalary: expectedSalary || '',
+      coverLetter: coverLetter || '',
       resume: resumeUrl,
       resumeFileUrl: resumeUrl,
       resumeFileName: req.file ? req.file.originalname : '',
