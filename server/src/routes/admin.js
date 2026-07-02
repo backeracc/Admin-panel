@@ -53,6 +53,16 @@ router.post('/jobs', async (req, res) => {
     });
 
     await job.save();
+
+    // Auto-sync department
+    if (category) {
+      await Department.findOneAndUpdate(
+        { name: category.trim() },
+        { name: category.trim() },
+        { upsert: true }
+      );
+    }
+
     res.status(201).json(job);
   } catch (error) {
     console.error('Error creating job:', error);
@@ -163,7 +173,14 @@ router.patch('/jobs/:id', async (req, res) => {
 
     const updateData = {};
     if (title !== undefined) updateData.title = title;
-    if (category !== undefined) updateData.category = category;
+    if (category !== undefined) {
+      updateData.category = category;
+      await Department.findOneAndUpdate(
+        { name: category.trim() },
+        { name: category.trim() },
+        { upsert: true }
+      );
+    }
     if (description !== undefined) updateData.description = description;
     if (location !== undefined) updateData.location = location;
     if (salary !== undefined) updateData.salary = salary;
@@ -670,6 +687,67 @@ router.post('/employees/manual', async (req, res) => {
     session.endSession();
     console.error('Error creating manual employee:', error);
     res.status(500).json({ error: 'Failed to create manual employee record' });
+  }
+});
+
+// POST /api/admin/system/sync - Maintenance route to auto-fix and sync jobs, departments, and employee progress
+router.post('/system/sync', async (req, res) => {
+  try {
+    const logs = [];
+
+    // 1. Fix Job categories
+    const jobs = await Job.find({});
+    for (const job of jobs) {
+      let newCat = job.category;
+      if (job.title.includes('Data Analyst')) newCat = 'Data Analyst';
+      else if (job.title.includes('Product Management')) newCat = 'Product Management';
+      else if (job.title.includes('UI/UX')) newCat = 'UI/UX Design';
+      
+      if (newCat !== job.category) {
+        logs.push(`Fixed Job Category: ${job.title} from '${job.category}' to '${newCat}'`);
+        job.category = newCat;
+        await job.save();
+      }
+    }
+
+    // 2. Sync Departments
+    const jobCategories = await Job.distinct('category');
+    for (const name of jobCategories) {
+      const trimmedName = name.trim();
+      await Department.findOneAndUpdate(
+        { name: trimmedName },
+        { name: trimmedName },
+        { upsert: true, new: true }
+      );
+    }
+    logs.push('Departments synced with all current job categories.');
+
+    // 3. Update EmployeeProgress
+    const hiredApplications = await Application.find({ status: 'HIRED' }).populate('job');
+    let updatedCount = 0;
+
+    for (const app of hiredApplications) {
+      if (!app.job) continue;
+
+      const progress = await EmployeeProgress.findOne({ applicationId: app._id });
+      if (progress) {
+        const correctCategory = app.job.category;
+        const correctTitle = app.job.title;
+
+        if (progress.department !== correctCategory || progress.role !== correctTitle) {
+          progress.department = correctCategory;
+          progress.role = correctTitle;
+          await progress.save();
+          updatedCount++;
+        }
+      }
+    }
+    logs.push(`Successfully updated ${updatedCount} employee progress records to match correct categories.`);
+
+    res.json({ success: true, logs });
+  } catch (error) {
+    console.error('Error in system sync:', error);
+    res.status(500).json({ error: 'Failed to sync system data' });
   }
 });
 
