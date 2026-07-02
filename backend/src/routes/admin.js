@@ -479,10 +479,22 @@ router.get('/applications/:id/resume', async (req, res) => {
 
     // 1. Redirect if it's an external web URL
     if (legacyResume.startsWith('http://') || legacyResume.startsWith('https://')) {
-      if (req.query.download === '1' && legacyResume.includes('res.cloudinary.com') && legacyResume.includes('/image/upload/')) {
-        // Force download by injecting Cloudinary's fl_attachment flag (only works for image/video resources)
-        const downloadUrl = legacyResume.replace('/upload/', '/upload/fl_attachment/');
-        return res.redirect(downloadUrl);
+      if (req.query.download === '1') {
+        try {
+          const response = await fetch(legacyResume);
+          if (response.ok) {
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const contentType = response.headers.get('content-type') || 'application/pdf';
+            const filename = app.resumeFileName || 'resume.pdf';
+            res.setHeader('Content-Type', contentType);
+            res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+            return res.send(buffer);
+          }
+        } catch (err) {
+          console.error('Failed to proxy resume download:', err);
+          // Fallback to redirect if proxy fails
+        }
       }
       return res.redirect(legacyResume);
     }
