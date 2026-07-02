@@ -22,6 +22,16 @@ const findJobByAnyId = async (paramId, session = null) => {
   return Job.findOne({ id: paramId }, null, opts);
 };
 
+// Helper: resolve an application by MongoDB _id OR custom string id field
+const findApplicationByAnyId = async (paramId, session = null) => {
+  const opts = session ? { session } : {};
+  if (mongoose.isValidObjectId(paramId)) {
+    const byMongoId = await Application.findById(paramId, null, opts);
+    if (byMongoId) return byMongoId;
+  }
+  return Application.findOne({ id: paramId }, null, opts);
+};
+
 // GET /api/admin/jobs - Get all jobs ordered newest first
 router.get('/jobs', async (req, res) => {
   try {
@@ -294,7 +304,7 @@ router.patch('/applications/:id', async (req, res) => {
     const appId = req.params.id;
 
     // Retrieve application
-    const app = await Application.findById(appId).session(session);
+    const app = await findApplicationByAnyId(appId, session);
     if (!app) {
       await session.abortTransaction();
       session.endSession();
@@ -377,9 +387,11 @@ router.patch('/applications/:id', async (req, res) => {
     // Side effect: send email (outside database transaction)
     if (previousStatus !== 'SHORTLISTED' && nextStatus === 'SHORTLISTED') {
       try {
-        const populatedApp = await Application.findById(appId)
-          .populate('user', 'name email')
-          .populate('job', 'title');
+        const baseApp = await findApplicationByAnyId(appId);
+        let populatedApp = null;
+        if (baseApp) {
+          populatedApp = await Application.findById(baseApp._id).populate('user', 'name email role').populate('job', 'title');
+        }
 
         if (populatedApp && populatedApp.user) {
           const mailResult = await sendShortlistedEmail({
@@ -416,7 +428,7 @@ router.patch('/applications/:id', async (req, res) => {
 // GET /api/admin/applications/:id/resume - Serves candidate resume
 router.get('/applications/:id/resume', async (req, res) => {
   try {
-    const app = await Application.findById(req.params.id);
+    const app = await findApplicationByAnyId(req.params.id);
     if (!app) {
       return res.status(404).json({ error: 'Application not found' });
     }
@@ -425,6 +437,11 @@ router.get('/applications/:id/resume', async (req, res) => {
 
     // 1. Redirect if it's an external web URL
     if (legacyResume.startsWith('http://') || legacyResume.startsWith('https://')) {
+      if (req.query.download === '1' && legacyResume.includes('res.cloudinary.com') && legacyResume.includes('/upload/')) {
+        // Force download by injecting Cloudinary's fl_attachment flag
+        const downloadUrl = legacyResume.replace('/upload/', '/upload/fl_attachment/');
+        return res.redirect(downloadUrl);
+      }
       return res.redirect(legacyResume);
     }
 
