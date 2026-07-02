@@ -41,7 +41,7 @@ const JOBS: Job[] = [
   { title: "AI Web Developer Intern(+Marketing)",             dept: "web",           type: "Full Time",  location: "Remote",   openings: 18 , image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80" },
   { title: "Cybersecurity Intern",                dept: "cybersecurity", type: "Full Time",  location: "Remote",   openings: 12 , image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=600&q=80" },
   { title: "Senior Manager",                      dept: "management",    type: "Full Time",  location: "Jabalpur", openings: 1  , image: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&q=80" },
-  { title: "UI/UX Designer",                      dept: "web",           type: "Full Time",  location: "Remote",   openings: 2  , image: "https://images.unsplash.com/photo-1561070791-2526d30994b8?w=600&q=80" },
+  { title: "UI/UX Designer", dept: "web", type: "Full Time", location: "Remote", openings: 2, image: "https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=600&q=80" }, 
   { title: "AI Graphics Designer",                dept: "graphics",      type: "Full Time",  location: "Remote",   openings: 13 , image: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=600&q=80" },
 ];
 
