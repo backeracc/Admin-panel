@@ -7,7 +7,15 @@ import User from '../models/User.js';
 import { sendShortlistedEmail } from '../lib/mailer.js';
 import EmployeeProgress from '../models/EmployeeProgress.js';
 import Department from '../models/Department.js';
+import { v2 as cloudinary } from 'cloudinary';
+import dotenv from 'dotenv';
+dotenv.config();
 
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 const router = express.Router();
 
 // Helper: resolve a job by MongoDB _id OR custom string id field
@@ -479,6 +487,44 @@ router.get('/applications/:id/resume', async (req, res) => {
 
     // 1. Redirect if it's an external web URL
     if (legacyResume.startsWith('http://') || legacyResume.startsWith('https://')) {
+      // Check if it's a Cloudinary URL
+      if (legacyResume.includes('res.cloudinary.com')) {
+        try {
+          const regex = /res\.cloudinary\.com\/[^\/]+\/(raw|image|video)\/upload\/(?:v\d+\/)?(.+)$/;
+          const match = legacyResume.match(regex);
+          
+          if (match) {
+            const resourceType = match[1]; // 'raw' or 'image' or 'video'
+            let publicId = decodeURIComponent(match[2]);
+            
+            // For images and videos, the public_id doesn't include the extension
+            // For raw, the public_id DOES include the extension
+            const extIndex = publicId.lastIndexOf('.');
+            if (resourceType !== 'raw' && extIndex !== -1) {
+              // Strip extension for image/video
+              publicId = publicId.substring(0, extIndex);
+            }
+            
+            // Generate private download URL (bypass ACL issues)
+            const options = { 
+              resource_type: resourceType, 
+              type: 'upload' 
+            };
+            
+            // If download requested, force attachment
+            if (req.query.download === '1') {
+              options.attachment = true;
+            }
+            
+            const secureUrl = cloudinary.utils.private_download_url(publicId, '', options);
+            return res.redirect(secureUrl);
+          }
+        } catch (err) {
+          console.error('Error generating Cloudinary secure URL:', err);
+        }
+      }
+
+      // Non-Cloudinary URL, or fallback
       if (req.query.download === '1') {
         try {
           const response = await fetch(legacyResume);

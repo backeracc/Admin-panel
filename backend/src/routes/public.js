@@ -37,7 +37,7 @@ const uploadToCloudinary = (buffer, originalName) => {
     const safeName = (originalName || 'resume').replace(/\s+/g, '_');
     const stream = cloudinary.uploader.upload_stream(
       {
-        resource_type: 'raw',
+        resource_type: 'auto',
         folder: 'resumes',
         use_filename: true,
         unique_filename: true,
