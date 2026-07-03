@@ -23,6 +23,8 @@ type AppRow = {
   expectedSalary?: string | null;
   coverLetter?: string | null;
   customAnswers?: { question: string; answer: string }[];
+  applicantName?: string;
+  applicantEmail?: string;
 };
 
 const statusOptions = ["PENDING", "REVIEWING", "SHORTLISTED", "REJECTED", "HIRED"] as const;
