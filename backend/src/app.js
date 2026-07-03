@@ -19,7 +19,7 @@ const allowedOrigins = [
   'http://localsm.tech',
   'https://localsm.tech',
   'https://localsmhiring.vercel.app',
-  'https://final-v4-admin.vercel.app', // Added Vercel URL
+  'https://final-v4-admin.vercel.app/', // Added Vercel URL
   process.env.CLIENT_URL,
   process.env.FRONTEND_URL,
 ].filter(Boolean);
