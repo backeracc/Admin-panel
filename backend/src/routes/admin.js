@@ -561,6 +561,29 @@ router.get('/applications/:id/resume', async (req, res) => {
       }
     }
 
+    // 3. Fallback: Check resumeAsset collection directly in MongoDB for legacy resumes
+    if (app.id) {
+      try {
+        const db = mongoose.connection.db;
+        const resumeAsset = await db.collection('resumeAsset').findOne({ applicationId: app.id });
+        if (resumeAsset && resumeAsset.data) {
+          const contentType = resumeAsset.contentType || resumeAsset.mimeType || 'application/pdf';
+          const filename = resumeAsset.fileName || app.resumeFileName || 'resume.pdf';
+          // MongoDB Binary has a .buffer property which is the actual Node.js Buffer
+          const buffer = resumeAsset.data.buffer ? Buffer.from(resumeAsset.data.buffer) : Buffer.from(resumeAsset.data);
+          
+          res.setHeader('Content-Type', contentType);
+          const disposition = req.query.download === '1' ? 'attachment' : 'inline';
+          res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);
+          res.setHeader('Cache-Control', 'private, no-store');
+          res.setHeader('X-Resume-Storage', 'legacy-resumeAsset');
+          return res.send(buffer);
+        }
+      } catch (assetErr) {
+        console.error('Error fetching from resumeAsset collection:', assetErr);
+      }
+    }
+
     res.status(404).json({ error: 'Resume is not available for this application' });
   } catch (error) {
     console.error('Error serving resume:', error);
