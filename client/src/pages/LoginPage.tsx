@@ -37,16 +37,16 @@ export default function LoginPage() {
             <span className={styles.heroLogoText}>LocalSM</span>
           </div>
           <h1 className={styles.heroTitle}>
-            Smart Employee<br />Management Portal
+            Hiring Panel<br />of LocalSM
           </h1>
           <p className={styles.heroSub}>
-            Streamline attendance, manage your team, and track performance — all in one place.
+            Streamline applications, manage candidates, and track hiring — all in one place.
           </p>
           <div className={styles.heroStats}>
             {[
-              { value: '500+', label: 'Employees managed' },
+              { value: '5k+', label: 'Applicants managed' },
               { value: '99.9%', label: 'Uptime guaranteed' },
-              { value: '3s', label: 'Avg check-in time' },
+              { value: '2s', label: 'Avg processing time' },
             ].map(stat => (
               <div key={stat.label} className={styles.heroStat}>
                 <div className={styles.heroStatValue}>{stat.value}</div>

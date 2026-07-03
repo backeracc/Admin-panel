@@ -41,7 +41,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
         <div className={styles.logoText}>
           <div className={styles.logoName}>LocalSM</div>
-          <div className={styles.logoTagline}>Employee Portal</div>
+          <div className={styles.logoTagline}>Hiring Panel</div>
         </div>
         {/* Close button — only visible on mobile */}
         <button
