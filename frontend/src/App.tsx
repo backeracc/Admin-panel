@@ -224,7 +224,7 @@ function ApplyModal({ job, onClose }: { job: JobDetail; onClose: () => void }) {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [form, setForm] = useState({ 
     name: "", email: "", phone: "", linkedin: "", portfolio: "", github: "",
-    location: "", coverLetter: ""
+    location: "", expectedSalary: "", coverLetter: ""
   });
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -251,6 +251,7 @@ function ApplyModal({ job, onClose }: { job: JobDetail; onClose: () => void }) {
     formData.append("portfolio", form.portfolio);
     formData.append("github", form.github);
     formData.append("location", form.location);
+    formData.append("expectedSalary", form.expectedSalary);
     formData.append("coverLetter", form.coverLetter);
     const customAnswersArray = job.customQuestions.map((q, i) => ({
       question: q,
@@ -449,6 +450,28 @@ function ApplyModal({ job, onClose }: { job: JobDetail; onClose: () => void }) {
                 style={{ border: `1.5px solid ${CREAM_BORDER}`, backgroundColor: CREAM, color: TEXT_DARK }}
                 onFocus={(e) => (e.target.style.borderColor = GOLD_DARK)}
                 onBlur={(e)  => (e.target.style.borderColor = CREAM_BORDER)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold mb-1.5" style={{ color: TEXT_DARK }}>
+                Expected Salary <span className="font-normal" style={{ color: TEXT_MUTED }}>(optional)</span>
+              </label>
+              <input
+                type="text"
+                placeholder={job.compensation?.toLowerCase() === 'unpaid' ? 'Not applicable (Unpaid role)' : 'e.g. $80,000/yr'}
+                value={job.compensation?.toLowerCase() === 'unpaid' ? '' : form.expectedSalary}
+                onChange={(e) => setForm({ ...form, expectedSalary: e.target.value })}
+                disabled={job.compensation?.toLowerCase() === 'unpaid'}
+                className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
+                style={{ 
+                  border: `1.5px solid ${CREAM_BORDER}`, 
+                  backgroundColor: job.compensation?.toLowerCase() === 'unpaid' ? '#f5f5f5' : CREAM, 
+                  color: job.compensation?.toLowerCase() === 'unpaid' ? TEXT_MUTED : TEXT_DARK,
+                  cursor: job.compensation?.toLowerCase() === 'unpaid' ? 'not-allowed' : 'text'
+                }}
+                onFocus={(e) => { if (job.compensation?.toLowerCase() !== 'unpaid') e.target.style.borderColor = GOLD_DARK; }}
+                onBlur={(e)  => { if (job.compensation?.toLowerCase() !== 'unpaid') e.target.style.borderColor = CREAM_BORDER; }}
               />
             </div>
 
