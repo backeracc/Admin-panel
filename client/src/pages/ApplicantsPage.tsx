@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Search, Mail, Phone, ExternalLink, FileText, Download, User, MapPin, Briefcase, DollarSign, Clock, X, AlertCircle, RefreshCw, Inbox, ClipboardList, Trash2 } from 'lucide-react'
+import { Search, Mail, Phone, ExternalLink, FileText, Download, User, MapPin, Briefcase, DollarSign, Clock, X, AlertCircle, RefreshCw, Inbox, ClipboardList, Trash2, Archive } from 'lucide-react'
 import { format } from 'date-fns'
+import JSZip from 'jszip'
+import { saveAs } from 'file-saver'
 import styles from './ApplicantsPage.module.css'
 
 type Note = { id: string; note: string };
@@ -319,6 +321,10 @@ export default function ApplicantsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+  
+  // Bulk Actions State
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [isZipping, setIsZipping] = useState(false)
 
   // Fetch applications from server
   const load = useCallback(async () => {
@@ -487,28 +493,34 @@ export default function ApplicantsPage() {
     }
   }
 
-  // Export to CSV
-  const handleExportCSV = () => {
-    if (filteredApplications.length === 0) {
+  // Selection Handlers
+  const handleToggleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedIds(new Set(filteredApplications.map(a => a.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // CSV Generator Logic
+  const generateCSV = (apps: AppRow[], filename: string) => {
+    if (apps.length === 0) {
       alert("No applications to export.");
       return;
     }
-
     const headers = [
-      "Name",
-      "Email",
-      "Phone",
-      "Status",
-      "Job Title",
-      "Category",
-      "Location",
-      "Years Experience",
-      "Current Company",
-      "Expected Salary",
-      "LinkedIn",
-      "GitHub",
-      "Portfolio",
-      "Applied At"
+      "Name", "Email", "Phone", "Status", "Job Title", "Category", 
+      "Location", "Years Experience", "Current Company", "Expected Salary", 
+      "LinkedIn", "GitHub", "Portfolio", "Applied At"
     ];
 
     const escapeCSV = (value: any) => {
@@ -520,7 +532,7 @@ export default function ApplicantsPage() {
       return str;
     };
 
-    const rows = filteredApplications.map(app => [
+    const rows = apps.map(app => [
       escapeCSV(app.user?.name || app.applicantName || 'Unknown Candidate'),
       escapeCSV(app.user?.email || app.applicantEmail || 'N/A'),
       escapeCSV(app.phone || 'N/A'),
@@ -537,19 +549,65 @@ export default function ApplicantsPage() {
       escapeCSV(app.createdAt ? new Date(app.createdAt).toLocaleString() : 'N/A')
     ]);
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\r\n');
-
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `applicants_export_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`);
+    link.setAttribute("download", filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleExportCSV = () => {
+    generateCSV(filteredApplications, `applicants_export_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`);
+  };
+
+  const handleExportSelectedCSV = () => {
+    const selectedApps = filteredApplications.filter(a => selectedIds.has(a.id));
+    generateCSV(selectedApps, `selected_applicants_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`);
+  };
+
+  // Download Resumes
+  const handleDownloadResumes = async () => {
+    if (selectedIds.size === 0) return;
+    setIsZipping(true);
+    try {
+      const zip = new JSZip();
+      const folder = zip.folder("Resumes");
+      const selectedApps = filteredApplications.filter(a => selectedIds.has(a.id));
+      
+      let successCount = 0;
+      for (const app of selectedApps) {
+        try {
+          const response = await fetch(`/api/admin/applications/${app.id}/resume?download=1`);
+          if (response.ok) {
+            const blob = await response.blob();
+            let filename = `resume_${app.user?.name || app.applicantName || app.id}.pdf`.replace(/[^a-z0-9.-]/gi, '_');
+            const contentDisposition = response.headers.get('content-disposition');
+            if (contentDisposition && contentDisposition.includes('filename=')) {
+              filename = contentDisposition.split('filename=')[1].replace(/"/g, '');
+            }
+            folder?.file(filename, blob);
+            successCount++;
+          }
+        } catch (e) {
+          console.error(`Failed to download resume for ${app.id}`, e);
+        }
+      }
+      
+      if (successCount > 0) {
+        const content = await zip.generateAsync({ type: "blob" });
+        saveAs(content, `resumes_${format(new Date(), 'yyyyMMdd_HHmmss')}.zip`);
+      } else {
+        alert("Failed to download any resumes.");
+      }
+    } catch (e: any) {
+      alert("Error generating zip: " + e.message);
+    } finally {
+      setIsZipping(false);
+    }
   };
 
   const getBadgeClass = (status: AppRow["status"]) => {
@@ -610,14 +668,39 @@ export default function ApplicantsPage() {
           ))}
         </select>
         
-        <button 
-          className="btn btn-outline btn-sm" 
-          onClick={handleExportCSV} 
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}
-          title="Export current view to CSV"
-        >
-          <Download size={14} /> Export CSV
-        </button>
+        {selectedIds.size > 0 ? (
+          <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
+            <span style={{ fontSize: '13px', fontWeight: 500, alignSelf: 'center', marginRight: '0.5rem', color: 'var(--text-secondary)' }}>
+              {selectedIds.size} selected
+            </span>
+            <button 
+              className="btn btn-outline btn-sm" 
+              onClick={handleExportSelectedCSV} 
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}
+            >
+              <Download size={14} /> Export Selected CSV
+            </button>
+            <button 
+              className="btn btn-primary btn-sm" 
+              onClick={handleDownloadResumes} 
+              disabled={isZipping}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}
+            >
+              <Archive size={14} /> {isZipping ? 'Zipping...' : 'Download Resumes'}
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', marginLeft: 'auto' }}>
+            <button 
+              className="btn btn-outline btn-sm" 
+              onClick={handleExportCSV} 
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}
+              title="Export current view to CSV"
+            >
+              <Download size={14} /> Export View CSV
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Applications Table */}
@@ -632,6 +715,13 @@ export default function ApplicantsPage() {
             <table className={styles.table}>
               <thead>
                 <tr>
+                  <th style={{ width: '40px', textAlign: 'center' }}>
+                    <input 
+                      type="checkbox" 
+                      onChange={handleToggleSelectAll} 
+                      checked={filteredApplications.length > 0 && selectedIds.size === filteredApplications.length}
+                    />
+                  </th>
                   <th>Candidate</th>
                   <th>Field</th>
                   <th>Role</th>
@@ -642,7 +732,14 @@ export default function ApplicantsPage() {
               </thead>
               <tbody>
                 {filteredApplications.map((app) => (
-                  <tr key={app.id}>
+                  <tr key={app.id} style={{ backgroundColor: selectedIds.has(app.id) ? 'var(--bg-muted)' : '' }}>
+                    <td style={{ textAlign: 'center' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={selectedIds.has(app.id)} 
+                        onChange={() => handleToggleSelect(app.id)}
+                      />
+                    </td>
                     <td>
                       <div className={styles.candidateCell}>
                         <span className={styles.candidateName}>{app.user?.name || 'Unknown Candidate'}</span>
