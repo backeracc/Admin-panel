@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npm install --prefix frontend && npm install --prefix client && npm run build --prefix frontend && npm run build --prefix client && rm -rf dist && mkdir dist && cp -r frontend/dist/* dist/ && mkdir -p dist/admin && cp -r client/dist/* dist/admin/"
+    "build": "npm install --prefix client && npm run build --prefix client && rm -rf dist && mkdir dist && cp -r client/dist/* dist/"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
