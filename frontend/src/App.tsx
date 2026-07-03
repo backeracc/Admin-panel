@@ -224,7 +224,7 @@ function ApplyModal({ job, onClose }: { job: JobDetail; onClose: () => void }) {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [form, setForm] = useState({ 
     name: "", email: "", phone: "", linkedin: "", portfolio: "", github: "",
-    location: "", yearsExperience: "", currentCompany: "", expectedSalary: "", coverLetter: ""
+    location: "", coverLetter: ""
   });
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -251,9 +251,6 @@ function ApplyModal({ job, onClose }: { job: JobDetail; onClose: () => void }) {
     formData.append("portfolio", form.portfolio);
     formData.append("github", form.github);
     formData.append("location", form.location);
-    formData.append("yearsExperience", form.yearsExperience);
-    formData.append("currentCompany", form.currentCompany);
-    formData.append("expectedSalary", form.expectedSalary);
     formData.append("coverLetter", form.coverLetter);
     const customAnswersArray = job.customQuestions.map((q, i) => ({
       question: q,
@@ -455,56 +452,6 @@ function ApplyModal({ job, onClose }: { job: JobDetail; onClose: () => void }) {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold mb-1.5" style={{ color: TEXT_DARK }}>
-                  Years of Experience <span style={{ color: GOLD_DARK }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. 3 years"
-                  value={form.yearsExperience}
-                  onChange={(e) => setForm({ ...form, yearsExperience: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
-                  style={{ border: `1.5px solid ${CREAM_BORDER}`, backgroundColor: CREAM, color: TEXT_DARK }}
-                  onFocus={(e) => (e.target.style.borderColor = GOLD_DARK)}
-                  onBlur={(e)  => (e.target.style.borderColor = CREAM_BORDER)}
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold mb-1.5" style={{ color: TEXT_DARK }}>
-                  Current Company <span className="font-normal" style={{ color: TEXT_MUTED }}>(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Google"
-                  value={form.currentCompany}
-                  onChange={(e) => setForm({ ...form, currentCompany: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
-                  style={{ border: `1.5px solid ${CREAM_BORDER}`, backgroundColor: CREAM, color: TEXT_DARK }}
-                  onFocus={(e) => (e.target.style.borderColor = GOLD_DARK)}
-                  onBlur={(e)  => (e.target.style.borderColor = CREAM_BORDER)}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold mb-1.5" style={{ color: TEXT_DARK }}>
-                Expected Salary <span className="font-normal" style={{ color: TEXT_MUTED }}>(optional)</span>
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. $80,000/yr"
-                value={form.expectedSalary}
-                onChange={(e) => setForm({ ...form, expectedSalary: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
-                style={{ border: `1.5px solid ${CREAM_BORDER}`, backgroundColor: CREAM, color: TEXT_DARK }}
-                onFocus={(e) => (e.target.style.borderColor = GOLD_DARK)}
-                onBlur={(e)  => (e.target.style.borderColor = CREAM_BORDER)}
-              />
-            </div>
 
             <div>
               <label className="block text-xs font-bold mb-1.5" style={{ color: TEXT_DARK }}>
