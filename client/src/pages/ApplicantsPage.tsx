@@ -535,7 +535,7 @@ export default function ApplicantsPage() {
     const rows = apps.map(app => [
       escapeCSV(app.user?.name || app.applicantName || 'Unknown Candidate'),
       escapeCSV(app.user?.email || app.applicantEmail || 'N/A'),
-      escapeCSV(app.phone || 'N/A'),
+      escapeCSV(app.phone ? `="${app.phone}"` : 'N/A'),
       escapeCSV(app.status),
       escapeCSV(app.job?.title || 'General Position'),
       escapeCSV(app.job?.category || 'General'),
