@@ -36,8 +36,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}>
       {/* Logo row with mobile close button */}
       <div className={styles.logo}>
-        <div className={styles.logoIcon}>
-          <span>L</span>
+        <div className={styles.logoIcon} style={{ background: 'transparent', boxShadow: 'none' }}>
+          <img src="/logo.png" alt="LocalSM" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '4px' }} />
         </div>
         <div className={styles.logoText}>
           <div className={styles.logoName}>LocalSM</div>
