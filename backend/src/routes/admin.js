@@ -770,6 +770,41 @@ router.get('/departments', async (req, res) => {
   }
 });
 
+// ── GET /api/admin/departments/all ─ Get all department objects ─────────────
+router.get('/departments/all', async (req, res) => {
+  try {
+    const departments = await Department.find({}).sort({ name: 1 });
+    res.json(departments);
+  } catch (error) {
+    console.error('Error fetching departments objects:', error);
+    res.status(500).json({ error: 'Failed to fetch departments objects' });
+  }
+});
+
+// ── POST /api/admin/departments/:name/image ─ Upload category image ─────────
+router.post('/departments/:name/image', imageUpload.single('image'), async (req, res) => {
+  try {
+    const { name } = req.params;
+    let department = await Department.findOne({ name });
+    
+    if (!department) {
+      department = new Department({ name });
+    }
+
+    if (req.file) {
+      const result = await uploadImageToCloudinary(req.file.buffer, req.file.originalname);
+      department.image = result.secure_url;
+      await department.save();
+      return res.json({ success: true, image: department.image });
+    }
+    
+    return res.status(400).json({ error: 'No image provided' });
+  } catch (error) {
+    console.error('Error uploading category image:', error);
+    res.status(500).json({ error: 'Failed to upload category image' });
+  }
+});
+
 // POST /api/admin/departments/manage - Manage departments (add, edit, delete)
 router.post('/departments/manage', async (req, res) => {
   try {

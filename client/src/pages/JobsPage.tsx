@@ -49,6 +49,7 @@ export default function JobsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   // Skill parsing utility
   const parseSkills = (value: string) => {
@@ -254,6 +255,34 @@ export default function JobsPage() {
     }
   }
 
+  const handleCategoryFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !jobForm.category) return;
+    
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      
+      const res = await fetch(`/api/admin/departments/${encodeURIComponent(jobForm.category)}/image`, {
+        method: "POST",
+        body: formData
+      });
+      
+      if (res.ok) {
+        alert("Category banner image uploaded successfully!");
+      } else {
+        alert("Failed to upload category image.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error uploading image");
+    } finally {
+      setUploadingImage(false);
+      e.target.value = '';
+    }
+  };
+
   // Edit action
   const startEditingJob = (job: Job) => {
     setEditingJobId(job.id)
@@ -359,18 +388,32 @@ export default function JobsPage() {
             />
           </div>
 
-          {/* Category */}
-          <div className={`${styles.inputGroup} ${styles.col4}`}>
-            <label className={styles.label}>Category *</label>
-            <select
-              className={styles.selectField}
-              value={jobForm.category}
-              onChange={(e) => handleCategoryChange(e.target.value)}
-            >
-              {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-              <option value="__add__">+ Add New Category</option>
-            </select>
-          </div>
+            {/* Category */}
+            <div className={`${styles.inputGroup} ${styles.col4}`}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label className={styles.label}>Category *</label>
+                {jobForm.category && jobForm.category !== '__add__' && (
+                  <label style={{ fontSize: '0.75rem', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    {uploadingImage ? 'Uploading...' : 'Upload Banner'}
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleCategoryFileUpload}
+                      disabled={uploadingImage}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                )}
+              </div>
+              <select
+                className={styles.selectField}
+                value={jobForm.category}
+                onChange={(e) => handleCategoryChange(e.target.value)}
+              >
+                {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+                <option value="__add__">+ Add New Category</option>
+              </select>
+            </div>
 
           {/* Location */}
           <div className={`${styles.inputGroup} ${styles.col4}`}>
