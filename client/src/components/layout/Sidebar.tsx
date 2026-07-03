@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, Briefcase, ClipboardList, Users, LogOut, ChevronRight, X
+  LayoutDashboard, Briefcase, ClipboardList, Users, LogOut, ChevronRight, X, BarChart
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import styles from './Sidebar.module.css'
@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { to: '/jobs',        icon: Briefcase,       label: 'Job Management', roles: ['admin','hr','manager'] },
   { to: '/applicants',  icon: ClipboardList,   label: 'Applicants',  roles: ['admin','hr','manager'] },
   { to: '/employees',   icon: Users,           label: 'Employees',   roles: ['admin','hr','manager'] },
+  { to: '/about-stats', icon: BarChart,        label: 'About Stats', roles: ['admin'] },
 ]
 
 interface SidebarProps {
