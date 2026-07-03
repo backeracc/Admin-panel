@@ -971,7 +971,7 @@ export default function App() {
             type: job.employmentType || 'Full Time',
             compensation: job.salary || 'Unpaid',
             openings: job.openings || 1,
-            image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80",
+            image: JOBS.find(j => j.title === job.title)?.image || "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80",
             description: job.description || '',
             responsibilities: [],
             requirements: [],
