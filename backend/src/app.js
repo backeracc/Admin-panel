@@ -18,7 +18,8 @@ const allowedOrigins = [
   'http://localhost:3001', // Backend itself (for curl tests)
   'http://localsm.tech',
   'https://localsm.tech',
-  'https://localsmhiring.vercel.app', // Added Vercel URL
+  'https://localsmhiring.vercel.app',
+  'https://final-v4-admin.vercel.app', // Added Vercel URL
   process.env.CLIENT_URL,
   process.env.FRONTEND_URL,
 ].filter(Boolean);
@@ -65,7 +66,7 @@ app.use((err, req, res, next) => {
 // Start standalone server if not running on Vercel
 if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
   const PORT = process.env.PORT || 5000;
-  
+
   const startServer = async () => {
     try {
       await connectDB();
@@ -77,7 +78,7 @@ if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
       process.exit(1);
     }
   };
-  
+
   startServer();
 }
 
