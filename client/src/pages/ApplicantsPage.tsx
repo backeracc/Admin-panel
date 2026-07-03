@@ -485,6 +485,71 @@ export default function ApplicantsPage() {
     }
   }
 
+  // Export to CSV
+  const handleExportCSV = () => {
+    if (filteredApplications.length === 0) {
+      alert("No applications to export.");
+      return;
+    }
+
+    const headers = [
+      "Name",
+      "Email",
+      "Phone",
+      "Status",
+      "Job Title",
+      "Category",
+      "Location",
+      "Years Experience",
+      "Current Company",
+      "Expected Salary",
+      "LinkedIn",
+      "GitHub",
+      "Portfolio",
+      "Applied At"
+    ];
+
+    const escapeCSV = (value: any) => {
+      if (value === null || value === undefined || value === "") return '""';
+      const str = String(value);
+      if (str.includes(',') || str.includes('"') || str.includes('\\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const rows = filteredApplications.map(app => [
+      escapeCSV(app.user?.name),
+      escapeCSV(app.user?.email),
+      escapeCSV(app.phone),
+      escapeCSV(app.status),
+      escapeCSV(app.job?.title),
+      escapeCSV(app.job?.category),
+      escapeCSV(app.location),
+      escapeCSV(app.yearsExperience),
+      escapeCSV(app.currentCompany),
+      escapeCSV(app.expectedSalary),
+      escapeCSV(app.linkedin),
+      escapeCSV(app.github),
+      escapeCSV(app.portfolio),
+      escapeCSV(new Date(app.createdAt).toLocaleString())
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `applicants_export_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const getBadgeClass = (status: AppRow["status"]) => {
     switch (status) {
       case 'HIRED': return styles.badge_hired
@@ -542,6 +607,15 @@ export default function ApplicantsPage() {
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
+        
+        <button 
+          className="btn btn-outline btn-sm" 
+          onClick={handleExportCSV} 
+          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}
+          title="Export current view to CSV"
+        >
+          <Download size={14} /> Export CSV
+        </button>
       </div>
 
       {/* Applications Table */}
