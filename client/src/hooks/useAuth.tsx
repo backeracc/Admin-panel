@@ -23,11 +23,11 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 // Mock users for demo
 const MOCK_USERS: Record<string, User & { password: string }> = {
   'admin@localsm.com': {
-    id: '1', name: 'Arjun Sharma', email: 'admin@localsm.com', password: 'admin123',
+    id: '1', name: 'Admin', email: 'admin@localsm.com', password: 'admin123',
     role: 'admin', department: 'Management', employeeCode: 'LSM-0001',
   },
   'hr@localsm.com': {
-    id: '2', name: 'Priya Thapa', email: 'hr@localsm.com', password: 'hr123',
+    id: '2', name: 'HR', email: 'hr@localsm.com', password: 'hr123',
     role: 'hr', department: 'Human Resources', employeeCode: 'LSM-0002',
   }
 }
