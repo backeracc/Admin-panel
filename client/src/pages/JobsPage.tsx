@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Edit3, Trash2, Calendar, MapPin, DollarSign, Award, Users, AlertCircle, RefreshCw, X, HelpCircle, Briefcase } from 'lucide-react'
+import { Plus, Edit3, Trash2, Calendar, MapPin, DollarSign, Award, Users, AlertCircle, RefreshCw, X, HelpCircle, Briefcase, Image as ImageIcon, BarChart } from 'lucide-react'
 import styles from './JobsPage.module.css'
+import AboutStatsPage from './AboutStatsPage'
 
 type Job = {
   id: string;
@@ -50,6 +51,10 @@ export default function JobsPage() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
+  
+  const [activeTab, setActiveTab] = useState<'jobs' | 'categories' | 'about'>('jobs')
+  const [departmentsData, setDepartmentsData] = useState<any[]>([])
+  const [loadingDepts, setLoadingDepts] = useState(false)
 
   // Skill parsing utility
   const parseSkills = (value: string) => {
@@ -99,9 +104,25 @@ export default function JobsPage() {
     }
   }, [])
 
+  const loadDepartments = useCallback(async () => {
+    try {
+      setLoadingDepts(true)
+      const res = await fetch('/api/admin/departments/all?t=' + Date.now())
+      if (res.ok) {
+        const data = await res.json()
+        setDepartmentsData(data)
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoadingDepts(false)
+    }
+  }, [])
+
   // Auto-refresh lifecycle
   useEffect(() => {
     void load()
+    loadDepartments()
 
     const intervalId = window.setInterval(() => {
       void load()
@@ -119,7 +140,7 @@ export default function JobsPage() {
       window.removeEventListener("focus", handleFocus)
       document.removeEventListener("visibilitychange", handleFocus)
     }
-  }, [load])
+  }, [load, loadDepartments])
 
   // Category select with Add option
   const handleCategoryChange = (value: string) => {
@@ -255,22 +276,24 @@ export default function JobsPage() {
     }
   }
 
-  const handleCategoryFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCategoryFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, categoryName?: string) => {
     const file = e.target.files?.[0];
-    if (!file || !jobForm.category) return;
+    const targetCategory = categoryName || jobForm.category;
+    if (!file || !targetCategory) return;
     
     setUploadingImage(true);
     try {
       const formData = new FormData();
       formData.append("image", file);
       
-      const res = await fetch(`/api/admin/departments/${encodeURIComponent(jobForm.category)}/image`, {
+      const res = await fetch(`/api/admin/departments/${encodeURIComponent(targetCategory)}/image`, {
         method: "POST",
         body: formData
       });
       
       if (res.ok) {
         alert("Category banner image uploaded successfully!");
+        loadDepartments();
       } else {
         alert("Failed to upload category image.");
       }
@@ -352,22 +375,97 @@ export default function JobsPage() {
 
   return (
     <div className="fade-in">
-      <div className={styles.pageHeader}>
+      <div className={styles.header}>
         <div>
           <h1 className={styles.pageTitle}>Job Management</h1>
-          <p className={styles.subtitle}>Maintain your career portal listings and open seats</p>
+          <p className={styles.pageDescription}>Maintain your career portal listings, categories, and about stats</p>
         </div>
-        <button className="btn btn-ghost btn-icon btn-sm" onClick={load} disabled={loading} title="Sync Listings">
-          <RefreshCw size={14} className={loading ? styles.spinning : ''} />
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <button 
+            className={styles.refreshBtn} 
+            onClick={() => { load(); loadDepartments(); }}
+            title="Refresh Data"
+            disabled={loading || loadingDepts}
+          >
+            <RefreshCw size={20} className={loading || loadingDepts ? styles.spin : ''} />
+          </button>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border)', marginBottom: '2rem' }}>
+        <button 
+          onClick={() => setActiveTab('jobs')}
+          style={{ padding: '0.75rem 1.5rem', background: 'none', border: 'none', borderBottom: activeTab === 'jobs' ? '2px solid var(--primary)' : '2px solid transparent', color: activeTab === 'jobs' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: activeTab === 'jobs' ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+        >
+          <Briefcase size={18} /> Job Postings
+        </button>
+        <button 
+          onClick={() => setActiveTab('categories')}
+          style={{ padding: '0.75rem 1.5rem', background: 'none', border: 'none', borderBottom: activeTab === 'categories' ? '2px solid var(--primary)' : '2px solid transparent', color: activeTab === 'categories' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: activeTab === 'categories' ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+        >
+          <ImageIcon size={18} /> Category Banners
+        </button>
+        <button 
+          onClick={() => setActiveTab('about')}
+          style={{ padding: '0.75rem 1.5rem', background: 'none', border: 'none', borderBottom: activeTab === 'about' ? '2px solid var(--primary)' : '2px solid transparent', color: activeTab === 'about' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: activeTab === 'about' ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+        >
+          <BarChart size={18} /> About Stats
         </button>
       </div>
 
-      {error && (
-        <div className="card flex items-center gap-3 mb-6" style={{ borderColor: 'var(--color-danger)', background: 'hsl(0, 72%, 51%, 0.05)' }}>
-          <AlertCircle className="text-danger" size={20} />
-          <div className="text-sm text-secondary">{error}</div>
+      {activeTab === 'about' && (
+        <div style={{ margin: '-2rem' }}>
+          <AboutStatsPage />
         </div>
       )}
+
+      {activeTab === 'categories' && (
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <h2 className={styles.cardTitle}>Manage Category Banners</h2>
+          </div>
+          <div style={{ padding: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            {departmentsData.map(dept => (
+              <div key={dept._id || dept.name} style={{ border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
+                <div style={{ height: '150px', backgroundColor: 'var(--surface-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                  {dept.image ? (
+                    <img src={dept.image} alt={dept.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ color: 'var(--text-muted)' }}>No Banner Image</span>
+                  )}
+                  <label style={{ position: 'absolute', bottom: '10px', right: '10px', background: 'var(--surface)', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', fontWeight: 500 }}>
+                    {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={(e) => handleCategoryFileUpload(e, dept.name)}
+                      disabled={uploadingImage}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                </div>
+                <div style={{ padding: '1rem', fontWeight: 600 }}>
+                  {dept.name}
+                </div>
+              </div>
+            ))}
+            {departmentsData.length === 0 && (
+              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', gridColumn: '1 / -1' }}>
+                No categories found. Add a job category first to manage its banner.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'jobs' && (
+        <>
+          {error && (
+            <div className="card flex items-center gap-3 mb-6" style={{ borderColor: 'var(--color-danger)', background: 'hsl(0, 72%, 51%, 0.05)' }}>
+              <AlertCircle className="text-danger" size={20} />
+              <div className="text-sm text-secondary">{error}</div>
+            </div>
+          )}
 
       {/* Jobs Editor Form */}
       <div className={styles.formCard}>
@@ -392,18 +490,6 @@ export default function JobsPage() {
             <div className={`${styles.inputGroup} ${styles.col4}`}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <label className={styles.label}>Category *</label>
-                {jobForm.category && jobForm.category !== '__add__' && (
-                  <label style={{ fontSize: '0.75rem', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    {uploadingImage ? 'Uploading...' : 'Upload Banner'}
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={handleCategoryFileUpload}
-                      disabled={uploadingImage}
-                      style={{ display: 'none' }}
-                    />
-                  </label>
-                )}
               </div>
               <select
                 className={styles.selectField}

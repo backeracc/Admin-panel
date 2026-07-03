@@ -4,13 +4,11 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import styles from './Sidebar.module.css'
-
 const NAV_ITEMS = [
   { to: '/dashboard',   icon: LayoutDashboard, label: 'Dashboard',   roles: ['admin','hr','manager','employee'] },
   { to: '/jobs',        icon: Briefcase,       label: 'Job Management', roles: ['admin','hr','manager'] },
   { to: '/applicants',  icon: ClipboardList,   label: 'Applicants',  roles: ['admin','hr','manager'] },
   { to: '/employees',   icon: Users,           label: 'Employees',   roles: ['admin','hr','manager'] },
-  { to: '/about-stats', icon: BarChart,        label: 'About Stats', roles: ['admin'] },
 ]
 
 interface SidebarProps {
