@@ -512,33 +512,33 @@ export default function ApplicantsPage() {
     const escapeCSV = (value: any) => {
       if (value === null || value === undefined || value === "") return '""';
       const str = String(value);
-      if (str.includes(',') || str.includes('"') || str.includes('\\n')) {
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
         return `"${str.replace(/"/g, '""')}"`;
       }
       return str;
     };
 
     const rows = filteredApplications.map(app => [
-      escapeCSV(app.user?.name),
-      escapeCSV(app.user?.email),
-      escapeCSV(app.phone),
+      escapeCSV(app.user?.name || app.applicantName || 'Unknown Candidate'),
+      escapeCSV(app.user?.email || app.applicantEmail || 'N/A'),
+      escapeCSV(app.phone || 'N/A'),
       escapeCSV(app.status),
-      escapeCSV(app.job?.title),
-      escapeCSV(app.job?.category),
-      escapeCSV(app.location),
-      escapeCSV(app.yearsExperience),
-      escapeCSV(app.currentCompany),
-      escapeCSV(app.expectedSalary),
-      escapeCSV(app.linkedin),
-      escapeCSV(app.github),
-      escapeCSV(app.portfolio),
-      escapeCSV(new Date(app.createdAt).toLocaleString())
+      escapeCSV(app.job?.title || 'General Position'),
+      escapeCSV(app.job?.category || 'General'),
+      escapeCSV(app.location || 'N/A'),
+      escapeCSV(app.yearsExperience || 'N/A'),
+      escapeCSV(app.currentCompany || 'N/A'),
+      escapeCSV(app.expectedSalary || 'N/A'),
+      escapeCSV(app.linkedin || 'N/A'),
+      escapeCSV(app.github || 'N/A'),
+      escapeCSV(app.portfolio || 'N/A'),
+      escapeCSV(app.createdAt ? new Date(app.createdAt).toLocaleString() : 'N/A')
     ]);
 
     const csvContent = [
       headers.join(','),
       ...rows.map(row => row.join(','))
-    ].join('\\n');
+    ].join('\r\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
