@@ -33,7 +33,7 @@ export default function LoginPage() {
       <div className={styles.hero}>
         <div className={styles.heroContent}>
           <div className={styles.heroLogo}>
-            <div className={styles.heroLogoIcon} style={{ background: 'transparent', boxShadow: 'none' }}>
+            <div className={styles.heroLogoIcon} style={{ background: 'white', boxShadow: 'none', padding: '2px' }}>
               <img src="/logo.png" alt="LocalSM" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '6px' }} />
             </div>
             <span className={styles.heroLogoText}>LocalSM</span>
