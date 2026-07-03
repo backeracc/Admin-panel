@@ -475,6 +475,34 @@ router.patch('/applications/:id', async (req, res) => {
   }
 });
 
+// DELETE /api/admin/applications/:id - Delete an application
+router.delete('/applications/:id', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const appId = req.params.id;
+    const app = await findApplicationByAnyId(appId, session);
+    
+    if (!app) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    await Application.findByIdAndDelete(app._id).session(session);
+    await EmployeeProgress.deleteOne({ applicationId: app._id }).session(session);
+
+    await session.commitTransaction();
+    session.endSession();
+    res.json({ ok: true });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Error deleting application:', error);
+    res.status(500).json({ error: 'Failed to delete application' });
+  }
+});
+
 // GET /api/admin/applications/:id/resume - Serves candidate resume
 router.get('/applications/:id/resume', async (req, res) => {
   try {

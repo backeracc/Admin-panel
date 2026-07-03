@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Search, Mail, Phone, ExternalLink, FileText, Download, User, MapPin, Briefcase, DollarSign, Clock, X, AlertCircle, RefreshCw, Inbox, ClipboardList } from 'lucide-react'
+import { Search, Mail, Phone, ExternalLink, FileText, Download, User, MapPin, Briefcase, DollarSign, Clock, X, AlertCircle, RefreshCw, Inbox, ClipboardList, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
 import styles from './ApplicantsPage.module.css'
 
@@ -420,6 +420,31 @@ export default function ApplicantsPage() {
     }
   }
 
+  // Delete applicant
+  const handleDelete = async (app: AppRow) => {
+    if (!window.confirm(`Are you sure you want to delete the application for ${app.user?.name}?`)) {
+      return
+    }
+    
+    // Optimistic update
+    const previousApplications = [...applications]
+    setApplications(prev => prev.filter(row => row.id !== app.id))
+    
+    try {
+      const res = await fetch(`/api/admin/applications/${app.id}`, {
+        method: "DELETE"
+      })
+      
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null)
+        throw new Error(payload?.error || "Failed to delete application")
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete application.')
+      setApplications(previousApplications)
+    }
+  }
+
   // Add notes handler
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -594,6 +619,14 @@ export default function ApplicantsPage() {
                           onClick={() => { setSelected(app); setNoteDraft(""); }}
                         >
                           Profile
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-sm text-danger"
+                          style={{ padding: '0.25rem' }}
+                          onClick={() => handleDelete(app)}
+                          title="Delete Application"
+                        >
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
