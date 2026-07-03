@@ -33,27 +33,29 @@ interface Job {
 
 /* ─── Static Data ─── */
 const JOBS: Job[] = [
-  { title: "On-Site Marketing Intern",            dept: "marketing",     type: "Full Time",  location: "Jabalpur", openings: 41 , image: "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=600&q=80" },
-  { title: "Quality Assurance Intern",            dept: "qa",            type: "Full Time",  location: "Remote",   openings: 14 , image: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=600&q=80" },
-  { title: "Product Management Intern",           dept: "product",       type: "Full Time",  location: "Remote",   openings: 13 , image: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=600&q=80" },
-  { title: "Data Analyst Intern(+Marketing)",                 dept: "product",       type: "Full Time",  location: "Remote",   openings: 2  , image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80" },
-  { title: "Junior Social Media Management Intern",dept: "marketing",    type: "Full Time",  location: "Remote",   openings: 10 , image: "https://images.unsplash.com/photo-1611926653458-09294b3142bf?w=600&q=80" },
-  { title: "AI Web Developer Intern(+Marketing)",             dept: "web",           type: "Full Time",  location: "Remote",   openings: 18 , image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80" },
-  { title: "Cybersecurity Intern",                dept: "cybersecurity", type: "Full Time",  location: "Remote",   openings: 12 , image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=600&q=80" },
-  { title: "Senior Manager",                      dept: "management",    type: "Full Time",  location: "Jabalpur", openings: 1  , image: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&q=80" },
-  { title: "UI/UX Designer", dept: "web", type: "Full Time", location: "Remote", openings: 2, image: "https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=600&q=80" }, 
-  { title: "AI Graphics Designer",                dept: "graphics",      type: "Full Time",  location: "Remote",   openings: 13 , image: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=600&q=80" },
+  { title: "On-Site Marketing Intern",            dept: "Marketing",          type: "Full Time",  location: "Jabalpur", openings: 41 , image: "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=600&q=80" },
+  { title: "Quality Assurance Intern",            dept: "QA",                 type: "Full Time",  location: "Remote",   openings: 14 , image: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=600&q=80" },
+  { title: "Product Management Intern",           dept: "Product Management", type: "Full Time",  location: "Remote",   openings: 13 , image: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=600&q=80" },
+  { title: "Data Analyst Intern(+Marketing)",     dept: "Product Management", type: "Full Time",  location: "Remote",   openings: 2  , image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80" },
+  { title: "Junior Social Media Management Intern",dept: "Marketing",         type: "Full Time",  location: "Remote",   openings: 10 , image: "https://images.unsplash.com/photo-1611926653458-09294b3142bf?w=600&q=80" },
+  { title: "AI Web Developer Intern(+Marketing)", dept: "Web Development",    type: "Full Time",  location: "Remote",   openings: 18 , image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80" },
+  { title: "Cybersecurity Intern",                dept: "Cybersecurity",      type: "Full Time",  location: "Remote",   openings: 12 , image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=600&q=80" },
+  { title: "Senior Manager",                      dept: "Management",         type: "Full Time",  location: "Jabalpur", openings: 1  , image: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&q=80" },
+  { title: "UI/UX Designer",                      dept: "UI/UX Design",       type: "Full Time",  location: "Remote", openings: 2, image: "https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=600&q=80" }, 
+  { title: "AI Graphics Designer",                dept: "Graphics Design",    type: "Full Time",  location: "Remote",   openings: 13 , image: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=600&q=80" },
 ];
 
-const DEPARTMENTS: { key: DeptKey; label: string }[] = [
-  { key: "all",          label: "Explore All Roles"  },
-  { key: "web",          label: "Web Development"     },
-  { key: "marketing",    label: "Marketing"           },
-  { key: "graphics",     label: "Graphics Design"     },
-  { key: "qa",           label: "QA"                  },
-  { key: "product",      label: "Product Management"  },
-  { key: "cybersecurity",label: "Cybersecurity"       },
-  { key: "management",   label: "Management"          },
+const DEPARTMENTS: { key: string; label: string }[] = [
+  { key: "all",                label: "Explore All Roles"  },
+  { key: "Web Development",    label: "Web Development"     },
+  { key: "Marketing",          label: "Marketing"           },
+  { key: "Graphics Design",    label: "Graphics Design"     },
+  { key: "QA",                 label: "QA"                  },
+  { key: "Product Management", label: "Product Management"  },
+  { key: "Cybersecurity",      label: "Cybersecurity"       },
+  { key: "Management",         label: "Management"          },
+  { key: "Data Analyst",       label: "Data Analyst"        },
+  { key: "UI/UX Design",       label: "UI/UX Design"        },
 ];
 
 const STATS = [
