@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import Job from '../models/Job.js';
 import Application from '../models/Application.js';
+import Department from '../models/Department.js';
 import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
@@ -56,9 +57,20 @@ const uploadToCloudinary = (buffer, originalName) => {
 router.get('/jobs', async (req, res) => {
   try {
     const jobs = await Job.find({ isOpen: true }).sort({ createdAt: -1 });
+
+    // Fetch all departments to map their images to jobs
+    const departments = await Department.find({});
+    const deptImageMap = {};
+    departments.forEach(dept => {
+      if (dept.image) {
+        deptImageMap[dept.name] = dept.image;
+      }
+    });
+
     const formattedJobs = jobs.map(j => {
       const obj = j.toJSON();
       obj.id = obj.id || obj._id.toString();
+      obj.image = deptImageMap[obj.category] || '';
       return obj;
     });
     res.json(formattedJobs);
