@@ -23,6 +23,20 @@ const defaultCategories = ["Web Development", "App Development", "Graphics Desig
 const experienceOptions = ["Intern", "Fresher", "Mid-level", "Experienced"];
 const employmentTypeOptions = ["Part Time", "Full Time"];
 
+const getFallbackImage = (deptName: string) => {
+  const map: Record<string, string> = {
+    "Marketing": "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=600&q=80",
+    "QA": "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=600&q=80",
+    "Product Management": "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=600&q=80",
+    "Web Development": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80",
+    "Cybersecurity": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=600&q=80",
+    "Management": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&q=80",
+    "UI/UX Design": "https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=600&q=80",
+    "Graphics Design": "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=600&q=80",
+  };
+  return map[deptName] || "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80";
+};
+
 const emptyForm = {
   title: "",
   category: defaultCategories[0],
@@ -306,6 +320,29 @@ export default function JobsPage() {
     }
   };
 
+  const handleCategoryFileDelete = async (categoryName: string) => {
+    if (!confirm(`Are you sure you want to delete the image for ${categoryName}?`)) return;
+    
+    setUploadingImage(true);
+    try {
+      const res = await fetch(`/api/admin/departments/${encodeURIComponent(categoryName)}/image`, {
+        method: "DELETE"
+      });
+      
+      if (res.ok) {
+        alert("Category banner image deleted successfully!");
+        loadDepartments();
+      } else {
+        alert("Failed to delete category image.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error deleting image");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   // Edit action
   const startEditingJob = (job: Job) => {
     setEditingJobId(job.id)
@@ -429,11 +466,21 @@ export default function JobsPage() {
               <div key={dept._id || dept.name} style={{ border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
                 <div style={{ height: '150px', backgroundColor: 'var(--surface-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                   {dept.image ? (
-                    <img src={dept.image} alt={dept.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <>
+                      <img src={dept.image} alt={dept.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <button 
+                        onClick={() => handleCategoryFileDelete(dept.name)} 
+                        disabled={uploadingImage}
+                        style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--color-danger, #ef4444)', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 500, zIndex: 2 }}
+                        title="Delete Image"
+                      >
+                        <Trash2 size={14} style={{ display: 'inline', verticalAlign: 'text-bottom' }} /> Delete
+                      </button>
+                    </>
                   ) : (
-                    <span style={{ color: 'var(--text-muted)' }}>No Banner Image</span>
+                    <img src={getFallbackImage(dept.name)} alt={`${dept.name} Fallback`} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} />
                   )}
-                  <label style={{ position: 'absolute', bottom: '10px', right: '10px', background: 'var(--surface)', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', fontWeight: 500 }}>
+                  <label style={{ position: 'absolute', bottom: '10px', right: '10px', background: 'var(--surface)', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', fontWeight: 500, zIndex: 2 }}>
                     {uploadingImage ? 'Uploading...' : 'Upload Image'}
                     <input 
                       type="file" 

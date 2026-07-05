@@ -805,6 +805,25 @@ router.post('/departments/:name/image', imageUpload.single('image'), async (req,
   }
 });
 
+// ── DELETE /api/admin/departments/:name/image ─ Delete category image ───────
+router.delete('/departments/:name/image', async (req, res) => {
+  try {
+    const { name } = req.params;
+    const department = await Department.findOne({ name });
+    
+    if (department && department.image) {
+      department.image = '';
+      await department.save();
+      return res.json({ success: true });
+    }
+    
+    return res.status(404).json({ error: 'Image or department not found' });
+  } catch (error) {
+    console.error('Error deleting category image:', error);
+    res.status(500).json({ error: 'Failed to delete category image' });
+  }
+});
+
 // POST /api/admin/departments/manage - Manage departments (add, edit, delete)
 router.post('/departments/manage', async (req, res) => {
   try {
