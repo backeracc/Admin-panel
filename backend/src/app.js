@@ -18,6 +18,8 @@ const allowedOrigins = [
   'http://localhost:3001', // Backend itself (for curl tests)
   'http://localsm.tech',
   'https://localsm.tech',
+  'https://admin.localsm.tech',
+  'https://www.admin.localsm.tech',
   'https://localsmhiring.vercel.app',
   'https://final-v4-admin.vercel.app',
   process.env.CLIENT_URL,
