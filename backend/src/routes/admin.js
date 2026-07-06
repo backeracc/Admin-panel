@@ -57,9 +57,11 @@ const uploadImageToCloudinary = (buffer, originalName) => {
 const findJobByAnyId = async (paramId, session = null) => {
   const opts = session ? { session } : {};
   // Try MongoDB ObjectId first
-  if (mongoose.isValidObjectId(paramId)) {
-    const byMongoId = await Job.findById(paramId, null, opts);
-    if (byMongoId) return byMongoId;
+  if (/^[0-9a-fA-F]{24}$/.test(paramId)) {
+    try {
+      const byMongoId = await Job.findById(paramId, null, opts);
+      if (byMongoId) return byMongoId;
+    } catch (e) {}
   }
   // Fall back to custom string id field
   return Job.findOne({ id: paramId }, null, opts);
@@ -68,9 +70,11 @@ const findJobByAnyId = async (paramId, session = null) => {
 // Helper: resolve an application by MongoDB _id OR custom string id field
 const findApplicationByAnyId = async (paramId, session = null) => {
   const opts = session ? { session } : {};
-  if (mongoose.isValidObjectId(paramId)) {
-    const byMongoId = await Application.findById(paramId, null, opts);
-    if (byMongoId) return byMongoId;
+  if (/^[0-9a-fA-F]{24}$/.test(paramId)) {
+    try {
+      const byMongoId = await Application.findById(paramId, null, opts);
+      if (byMongoId) return byMongoId;
+    } catch (e) {}
   }
   return Application.findOne({ id: paramId }, null, opts);
 };
