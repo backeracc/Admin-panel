@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Search, Mail, Phone, ExternalLink, FileText, Download, User, MapPin, Briefcase, DollarSign, Clock, X, AlertCircle, RefreshCw, Inbox, ClipboardList, Trash2, Archive } from 'lucide-react'
 import { format } from 'date-fns'
 import JSZip from 'jszip'
@@ -110,7 +111,7 @@ function CandidateProfileModal({
     }
   };
 
-  return (
+  return createPortal(
     <div className={styles.modalOverlay} onClick={() => setSelected(null)}>
       <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
         <button className={styles.modalCloseBtn} onClick={() => setSelected(null)}>
@@ -306,7 +307,8 @@ function CandidateProfileModal({
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
