@@ -411,15 +411,6 @@ export default function ApplicantsPage() {
         throw new Error(payload?.error || "Failed to update status")
       }
 
-      // Shortlisting success/warning feedback
-      if (nextStatus === "SHORTLISTED") {
-        if (payload?.mailWarning) {
-          alert(`${payload.mailWarning}\nEmail provider debug logs will contain more info.`);
-        } else {
-          const provider = payload?.mailReport?.provider ? ` via ${payload.mailReport.provider}` : ""
-          alert(`Shortlist notification email sent successfully${provider} to ${app.user.email}.`)
-        }
-      }
 
       await load()
     } catch (err: any) {
