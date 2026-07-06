@@ -469,7 +469,7 @@ router.patch('/applications/:id', async (req, res) => {
       }
     }
 
-    await app.save({ session });
+    await app.save({ session, validateModifiedOnly: true });
     await session.commitTransaction();
     session.endSession();
 
