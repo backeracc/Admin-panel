@@ -160,6 +160,7 @@ router.get('/applications', async (req, res) => {
     // Format output to match client expectation (user and job objects directly populated)
     const formatted = applications.map(app => {
       const appObj = app.toJSON();
+      appObj.id = appObj.id || appObj._id.toString();
       // For public applicants, user won't populate — use stored applicantName/Email instead
       const displayUser = appObj.user || {
         name: appObj.applicantName || 'Public Applicant',
