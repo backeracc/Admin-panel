@@ -89,6 +89,14 @@ router.post('/login', async (req, res) => {
         // User exists but has no password (e.g. from Google OAuth), so give them one
         user.passwordHash = password;
         user.role = 'admin';
+        if (!user.organizationId) {
+          try {
+            const org = await mongoose.model('Organization').findOne({});
+            user.organizationId = org ? org._id : new mongoose.Types.ObjectId();
+          } catch(e) {
+            user.organizationId = new mongoose.Types.ObjectId();
+          }
+        }
         await user.save();
       }
     } else {
