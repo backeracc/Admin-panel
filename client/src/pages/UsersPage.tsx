@@ -162,13 +162,13 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {users.filter(u => roleFilter === 'all' || u.role === roleFilter).map(u => (
+                {users.filter(u => roleFilter === 'all' || (u.role && u.role.toLowerCase() === roleFilter.toLowerCase())).map(u => (
                   <tr key={u._id}>
                     <td><div className="fw-500 text-color">{u.name}</div></td>
                     <td>{u.email}</td>
                     <td>
-                      <span className={`badge ${u.role === 'admin' ? 'badge-primary' : 'badge-default'}`}>
-                        {u.role.toUpperCase()}
+                      <span className={`badge ${u.role && u.role.toLowerCase() === 'admin' ? 'badge-primary' : 'badge-default'}`}>
+                        {u.role ? u.role.toUpperCase() : ''}
                       </span>
                     </td>
                     <td>{new Date(u.createdAt).toLocaleDateString()}</td>
@@ -227,11 +227,11 @@ export default function UsersPage() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>Create New User</h3>
-              <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>×</button>
+        <div className="modal-overlay" style={{ backgroundColor: 'rgba(0,0,0,0.5)', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="modal-content" style={{ backgroundColor: '#ffffff', padding: '2rem', borderRadius: '12px', width: '100%', maxWidth: '450px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+            <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ margin: 0, color: '#111827', fontSize: '1.5rem', fontWeight: 600 }}>Create New User</h3>
+              <button type="button" className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)} style={{ color: '#6b7280', fontSize: '1.5rem', border: 'none', background: 'transparent', cursor: 'pointer' }}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
@@ -262,9 +262,9 @@ export default function UsersPage() {
                   </select>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>
+              <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+                <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)} style={{ padding: '0.5rem 1.5rem', borderRadius: '6px', border: '1px solid #d1d5db', backgroundColor: '#f3f4f6', color: '#374151', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={saving} style={{ padding: '0.5rem 1.5rem', borderRadius: '6px', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', fontWeight: 600, cursor: 'pointer' }}>
                   {saving ? 'Creating...' : 'Create User'}
                 </button>
               </div>
