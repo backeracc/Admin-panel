@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
+const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:3001');
 
 export type Role = 'admin' | 'hr' | 'manager' | 'employee'
 
@@ -29,11 +29,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   })
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch(`${API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
+    let res;
+    try {
+      console.log('Attempting login fetch to:', `${API_URL}/api/auth/login`);
+      res = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+    } catch (err) {
+      console.error('Network or fetch error during login:', err);
+      throw err;
+    }
+
     const data = await res.json();
     
     if (!res.ok) {
