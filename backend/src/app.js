@@ -20,6 +20,7 @@ const allowedOrigins = [
   'http://localhost:3001', // Backend itself (for curl tests)
   'http://localsm.tech',
   'https://localsm.tech',
+  'https://test-final-admin.vercel.app',
   'https://admin.localsm.tech',
   'https://www.admin.localsm.tech',
   'https://final-v4-admin.vercel.app',
