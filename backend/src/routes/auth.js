@@ -6,6 +6,7 @@ import TrustedDevice from '../models/TrustedDevice.js';
 import LoginLog from '../models/LoginLog.js';
 import { sendOtpEmail } from '../lib/otpMailer.js';
 import crypto from 'crypto';
+import mongoose from 'mongoose';
 
 const router = express.Router();
 
@@ -42,8 +43,28 @@ router.post('/login', async (req, res) => {
     const ipAddress = req.ip || req.connection.remoteAddress;
     const userAgent = req.headers['user-agent'] || 'Unknown';
 
-    // 1. Find User
-    const user = await User.findOne({ email }).select('+passwordHash');
+    // 1. Find User (or auto-create if it's the super admin from .env)
+    let user = await User.findOne({ email }).select('+passwordHash');
+    
+    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
+    const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
+
+    if (!user && superAdminEmail && email === superAdminEmail && password === superAdminPassword) {
+      // Auto-seed the super admin if they don't exist
+      const org = await mongoose.model('Organization').findOne({});
+      const orgId = org ? org._id : new mongoose.Types.ObjectId();
+
+      user = new User({
+        id: new mongoose.Types.ObjectId().toString(),
+        name: 'Super Admin',
+        email: superAdminEmail,
+        passwordHash: await bcrypt.hash(superAdminPassword, 12),
+        role: 'admin',
+        organizationId: orgId
+      });
+      await user.save();
+    }
+
     if (!user) {
       await logLogin(email, null, ipAddress, userAgent, 'Failed');
       return res.status(401).json({ error: 'Invalid email or password' });
