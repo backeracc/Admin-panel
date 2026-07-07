@@ -194,6 +194,7 @@ export default function UsersPage() {
                 <tr>
                   <th>Time</th>
                   <th>Email</th>
+                  <th>Role</th>
                   <th>Status</th>
                   <th>IP Address</th>
                   <th>User Agent</th>
@@ -204,6 +205,11 @@ export default function UsersPage() {
                   <tr key={log._id}>
                     <td className="text-muted">{new Date(log.createdAt).toLocaleString()}</td>
                     <td className="fw-500">{log.email}</td>
+                    <td>
+                      <span className={`badge ${log.role && log.role.toLowerCase() === 'admin' ? 'badge-primary' : 'badge-default'}`}>
+                        {log.role ? log.role.toUpperCase() : 'UNKNOWN'}
+                      </span>
+                    </td>
                     <td>
                       <span className={`badge ${log.status === 'Success' ? 'badge-success' : 'badge-danger'}`}>
                         {log.status}
