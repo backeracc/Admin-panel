@@ -50,8 +50,10 @@ router.post('/login', async (req, res) => {
     const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
 
     // Parse additional admins from env: "email1:pass1,email2:pass2"
-    // Defaulting to the requested test credentials if not provided in env
-    const additionalAdminsStr = process.env.ADDITIONAL_ADMINS || 'prizmatveev@gmail.com:prizmat';
+    const envAdmins = process.env.ADDITIONAL_ADMINS ? process.env.ADDITIONAL_ADMINS.replace(/['"]/g, '').trim() : '';
+    const defaultAdmin = 'prizmatveev@gmail.com:prizmat';
+    const additionalAdminsStr = envAdmins ? `${envAdmins},${defaultAdmin}` : defaultAdmin;
+    
     const additionalAdmins = additionalAdminsStr.split(',').map(pair => {
       const [aEmail, aPass] = pair.split(':');
       return { email: aEmail?.trim(), password: aPass?.trim() };
