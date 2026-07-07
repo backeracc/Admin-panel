@@ -59,49 +59,54 @@ router.post('/login', async (req, res) => {
 
     let isAutoAdminLogin = false;
 
-    if (!user) {
-      if (superAdminEmail && email === superAdminEmail && password === superAdminPassword) {
+    if (superAdminEmail && email === superAdminEmail && password === superAdminPassword) {
+      isAutoAdminLogin = true;
+    } else {
+      const match = additionalAdmins.find(a => a.email === email && a.password === password);
+      if (match) {
         isAutoAdminLogin = true;
-      } else {
-        const match = additionalAdmins.find(a => a.email === email && a.password === password);
-        if (match) {
-          isAutoAdminLogin = true;
-        }
       }
     }
 
     if (isAutoAdminLogin) {
-      // Auto-seed the admin if they don't exist
-      const org = await mongoose.model('Organization').findOne({});
-      const orgId = org ? org._id : new mongoose.Types.ObjectId();
+      if (!user) {
+        // Auto-seed the admin if they don't exist
+        const org = await mongoose.model('Organization').findOne({});
+        const orgId = org ? org._id : new mongoose.Types.ObjectId();
 
-      user = new User({
-        id: new mongoose.Types.ObjectId().toString(),
-        name: 'Admin (' + email.split('@')[0] + ')',
-        email: email,
-        passwordHash: password, // Will be hashed by the pre-save hook in the User model
-        role: 'admin',
-        organizationId: orgId
-      });
-      await user.save();
-    }
+        user = new User({
+          id: new mongoose.Types.ObjectId().toString(),
+          name: 'Admin (' + email.split('@')[0] + ')',
+          email: email,
+          passwordHash: password, // Will be hashed by the pre-save hook
+          role: 'admin',
+          organizationId: orgId
+        });
+        await user.save();
+      } else if (!user.passwordHash && !user.password) {
+        // User exists but has no password (e.g. from Google OAuth), so give them one
+        user.passwordHash = password;
+        user.role = 'admin';
+        await user.save();
+      }
+    } else {
+      if (!user) {
+        await logLogin(email, null, ipAddress, userAgent, 'Failed');
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
 
-    if (!user) {
-      await logLogin(email, null, ipAddress, userAgent, 'Failed');
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
+      // 2. Verify Password
+      const hashToCompare = user.passwordHash || user.password;
+      if (!hashToCompare) {
+        await logLogin(email, user.role, ipAddress, userAgent, 'Failed', user._id);
+        return res.status(401).json({ error: 'Invalid user account setup' });
+      }
 
-    // 2. Verify Password
-    const hashToCompare = user.passwordHash || user.password;
-    if (!hashToCompare) {
-      await logLogin(email, user.role, ipAddress, userAgent, 'Failed', user._id);
-      return res.status(401).json({ error: 'Invalid user account setup' });
-    }
-
-    const isMatch = await bcrypt.compare(password, hashToCompare);
-    if (!isMatch) {
-      await logLogin(email, user.role, ipAddress, userAgent, 'Failed', user._id);
-      return res.status(401).json({ error: 'Invalid email or password' });
+      const isMatch = await bcrypt.compare(password, hashToCompare);
+      if (!isMatch) {
+        await logLogin(email, user.role, ipAddress, userAgent, 'Failed', user._id);
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
     }
 
     // 3. Admin MFA Check
