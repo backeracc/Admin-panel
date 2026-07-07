@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import { API_BASE } from '../config' // Assuming we have a config or we can just hardcode /api
 
 export type Role = 'admin' | 'hr' | 'manager' | 'employee'
 
@@ -7,30 +8,19 @@ export interface User {
   name: string
   email: string
   role: Role
-  department: string
+  department?: string
   avatar?: string
-  employeeCode: string
+  employeeCode?: string
 }
 
 interface AuthContextValue {
   user: User | null
-  login: (email: string, password: string) => Promise<void>
-  logout: () => void
+  login: (email: string, password: string) => Promise<{ requireOtp?: boolean } | void>
+  verifyOtp: (email: string, otp: string, rememberMe: boolean) => Promise<void>
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
-
-// Mock users for demo
-const MOCK_USERS: Record<string, User & { password: string }> = {
-  'admin@localsm.com': {
-    id: '1', name: 'Admin', email: 'admin@localsm.com', password: 'admin123',
-    role: 'admin', department: 'Management', employeeCode: 'LSM-0001',
-  },
-  'hr@localsm.com': {
-    id: '2', name: 'HR', email: 'hr@localsm.com', password: 'hr123',
-    role: 'hr', department: 'Human Resources', employeeCode: 'LSM-0002',
-  }
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
@@ -39,23 +29,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   })
 
   const login = useCallback(async (email: string, password: string) => {
-    await new Promise(r => setTimeout(r, 800)) // simulate API
-    const found = MOCK_USERS[email]
-    if (!found || found.password !== password) {
-      throw new Error('Invalid email or password')
+    const res = await fetch(`http://localhost:3001/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Login failed');
     }
-    const { password: _, ...userData } = found
-    setUser(userData)
-    localStorage.setItem('lsm_user', JSON.stringify(userData))
+
+    if (data.requireOtp) {
+      return { requireOtp: true };
+    }
+
+    setUser(data.user);
+    localStorage.setItem('lsm_user', JSON.stringify(data.user));
+    localStorage.setItem('lsm_token', data.token); // Store token
   }, [])
 
-  const logout = useCallback(() => {
+  const verifyOtp = useCallback(async (email: string, otp: string, rememberMe: boolean) => {
+    const res = await fetch(`http://localhost:3001/api/auth/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp, rememberMe })
+    });
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'OTP verification failed');
+    }
+
+    setUser(data.user);
+    localStorage.setItem('lsm_user', JSON.stringify(data.user));
+    localStorage.setItem('lsm_token', data.token);
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await fetch(`http://localhost:3001/api/auth/logout`, { method: 'POST' });
+    } catch(e) {} // ignore error
     setUser(null)
     localStorage.removeItem('lsm_user')
+    localStorage.removeItem('lsm_token')
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, verifyOtp, logout }}>
       {children}
     </AuthContext.Provider>
   )

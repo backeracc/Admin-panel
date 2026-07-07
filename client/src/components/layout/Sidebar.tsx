@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { to: '/applicants',  icon: ClipboardList,   label: 'Applicants',  roles: ['admin','hr','manager'] },
   { to: '/employees',   icon: Users,           label: 'Employees',   roles: ['admin','hr','manager'] },
   { to: '/about-stats', icon: BarChart,        label: 'About Stats', roles: ['admin','hr','manager'] },
+  { to: '/users',       icon: Users,           label: 'Manage Staff', roles: ['admin'] },
 ]
 
 interface SidebarProps {

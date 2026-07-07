@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import adminRoutes from './routes/admin.js';
 import publicRoutes from './routes/public.js';
+import authRoutes from './routes/auth.js';
+import usersRoutes from './routes/users.js';
 
 // Load environment variables
 dotenv.config();
@@ -49,6 +51,8 @@ app.use((req, res, next) => {
 // Register Routes
 app.use('/api/admin', adminRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

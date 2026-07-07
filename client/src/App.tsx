@@ -7,6 +7,7 @@ import JobsPage from '@/pages/JobsPage'
 import ApplicantsPage from '@/pages/ApplicantsPage'
 import EmployeesPage from '@/pages/EmployeesPage'
 import AboutStatsPage from '@/pages/AboutStatsPage'
+import UsersPage from '@/pages/UsersPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
@@ -33,6 +34,7 @@ export default function App() {
             <Route path="applicants" element={<ApplicantsPage />} />
             <Route path="employees" element={<EmployeesPage />} />
             <Route path="about-stats" element={<AboutStatsPage />} />
+            <Route path="users" element={<UsersPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
