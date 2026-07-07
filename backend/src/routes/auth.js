@@ -44,7 +44,7 @@ router.post('/login', async (req, res) => {
     const userAgent = req.headers['user-agent'] || 'Unknown';
 
     // 1. Find User (or auto-create if it's the super admin from .env)
-    let user = await User.findOne({ email }).select('+passwordHash');
+    let user = await User.findOne({ email }).select('+passwordHash +password');
     
     const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
     const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
@@ -79,7 +79,7 @@ router.post('/login', async (req, res) => {
         id: new mongoose.Types.ObjectId().toString(),
         name: 'Admin (' + email.split('@')[0] + ')',
         email: email,
-        passwordHash: await bcrypt.hash(password, 12),
+        passwordHash: password, // Will be hashed by the pre-save hook in the User model
         role: 'admin',
         organizationId: orgId
       });
@@ -92,7 +92,13 @@ router.post('/login', async (req, res) => {
     }
 
     // 2. Verify Password
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    const hashToCompare = user.passwordHash || user.password;
+    if (!hashToCompare) {
+      await logLogin(email, user.role, ipAddress, userAgent, 'Failed', user._id);
+      return res.status(401).json({ error: 'Invalid user account setup' });
+    }
+
+    const isMatch = await bcrypt.compare(password, hashToCompare);
     if (!isMatch) {
       await logLogin(email, user.role, ipAddress, userAgent, 'Failed', user._id);
       return res.status(401).json({ error: 'Invalid email or password' });
