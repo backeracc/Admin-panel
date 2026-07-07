@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Users, Activity, Loader2 } from 'lucide-react'
+import { Plus, Users, Activity, Loader2, Trash2, Filter } from 'lucide-react'
 import styles from './UsersPage.module.css'
 
 interface User {
@@ -25,6 +25,7 @@ export default function UsersPage() {
   const [logs, setLogs] = useState<LoginLog[]>([])
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState<'users' | 'logs'>('users')
+  const [roleFilter, setRoleFilter] = useState('all')
 
   const [showModal, setShowModal] = useState(false)
   const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'hr' })
@@ -77,6 +78,24 @@ export default function UsersPage() {
     }
   }
 
+  const handleDelete = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete ${name}? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`${API_URL}/api/users/${id}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        fetchData();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to delete user');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting user');
+    }
+  }
+
   return (
     <div className="page-container">
       <div className="page-header">
@@ -89,19 +108,40 @@ export default function UsersPage() {
         </button>
       </div>
 
-      <div className={styles.tabs}>
-        <button 
-          className={`${styles.tab} ${view === 'users' ? styles.active : ''}`}
-          onClick={() => setView('users')}
-        >
-          <Users size={16} /> Users
-        </button>
-        <button 
-          className={`${styles.tab} ${view === 'logs' ? styles.active : ''}`}
-          onClick={() => setView('logs')}
-        >
-          <Activity size={16} /> Login History
-        </button>
+      <div className={styles.tabs} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button 
+            className={`${styles.tab} ${view === 'users' ? styles.active : ''}`}
+            onClick={() => setView('users')}
+          >
+            <Users size={16} /> Users
+          </button>
+          <button 
+            className={`${styles.tab} ${view === 'logs' ? styles.active : ''}`}
+            onClick={() => setView('logs')}
+          >
+            <Activity size={16} /> Login History
+          </button>
+        </div>
+        
+        {view === 'users' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Filter size={16} className="text-muted" />
+            <select 
+              className="input" 
+              style={{ padding: '0.25rem 0.5rem', width: 'auto', minWidth: '120px' }}
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+            >
+              <option value="all">All Roles</option>
+              <option value="admin">Admin</option>
+              <option value="manager">Manager</option>
+              <option value="hr">HR</option>
+              <option value="employee">Employee</option>
+              <option value="candidate">Candidate</option>
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="card">
@@ -118,10 +158,11 @@ export default function UsersPage() {
                   <th>Email</th>
                   <th>Role</th>
                   <th>Created At</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {users.map(u => (
+                {users.filter(u => roleFilter === 'all' || u.role === roleFilter).map(u => (
                   <tr key={u._id}>
                     <td><div className="fw-500 text-color">{u.name}</div></td>
                     <td>{u.email}</td>
@@ -131,6 +172,16 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td>{new Date(u.createdAt).toLocaleDateString()}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button 
+                        onClick={() => handleDelete(u._id, u.name)}
+                        className="btn btn-ghost btn-icon" 
+                        style={{ color: '#ef4444', padding: '4px' }}
+                        title="Delete User"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -187,23 +238,23 @@ export default function UsersPage() {
                 {modalError && <div className="alert alert-danger" style={{ marginBottom: '1rem', color: 'red' }}>{modalError}</div>}
                 
                 <div className="form-group">
-                  <label className="label">Name</label>
-                  <input type="text" className="input" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
+                  <label className="label" style={{ color: '#1f2937', fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.5rem', display: 'block' }}>Name</label>
+                  <input type="text" className="input" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required style={{ border: '1px solid #ccc', color: '#000', backgroundColor: '#fff' }} />
                 </div>
                 
                 <div className="form-group">
-                  <label className="label">Email</label>
-                  <input type="email" className="input" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required />
+                  <label className="label" style={{ color: '#1f2937', fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.5rem', display: 'block' }}>Email</label>
+                  <input type="email" className="input" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required style={{ border: '1px solid #ccc', color: '#000', backgroundColor: '#fff' }} />
                 </div>
 
                 <div className="form-group">
-                  <label className="label">Password</label>
-                  <input type="text" className="input" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required />
+                  <label className="label" style={{ color: '#1f2937', fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.5rem', display: 'block' }}>Password</label>
+                  <input type="text" className="input" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required style={{ border: '1px solid #ccc', color: '#000', backgroundColor: '#fff' }} />
                 </div>
 
                 <div className="form-group">
-                  <label className="label">Role</label>
-                  <select className="input" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
+                  <label className="label" style={{ color: '#1f2937', fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.5rem', display: 'block' }}>Role</label>
+                  <select className="input" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} style={{ border: '1px solid #ccc', color: '#000', backgroundColor: '#fff' }}>
                     <option value="hr">HR</option>
                     <option value="manager">Manager</option>
                     <option value="employee">Employee</option>

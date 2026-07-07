@@ -38,8 +38,13 @@ router.post('/', async (req, res) => {
     }
 
     // Default to an existing organization ID if possible
-    const org = await mongoose.model('Organization').findOne({});
-    const orgId = org ? org._id : new mongoose.Types.ObjectId();
+    let orgId;
+    try {
+      const org = mongoose.models.Organization ? await mongoose.model('Organization').findOne({}) : null;
+      orgId = org ? org._id : new mongoose.Types.ObjectId();
+    } catch(e) {
+      orgId = new mongoose.Types.ObjectId();
+    }
 
     const newUser = new User({
       id: new mongoose.Types.ObjectId().toString(),
@@ -76,6 +81,29 @@ router.get('/logs', async (req, res) => {
   } catch (error) {
     console.error('Error fetching login logs:', error);
     res.status(500).json({ error: 'Failed to fetch login logs' });
+  }
+});
+
+// ── DELETE /api/users/:id ─────────────────────────────────────────────────
+// Delete a user
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Optional: Prevent deleting the super admin or yourself
+    // if (user.email === process.env.SUPER_ADMIN_EMAIL) return res.status(403).json({ error: 'Cannot delete super admin' });
+
+    await User.findByIdAndDelete(id);
+    
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
   }
 });
 
