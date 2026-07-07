@@ -31,7 +31,7 @@ export default function UsersPage() {
   const [modalError, setModalError] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
 
   const fetchData = async () => {
     setLoading(true)
