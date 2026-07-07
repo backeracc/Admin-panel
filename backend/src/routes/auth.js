@@ -49,16 +49,37 @@ router.post('/login', async (req, res) => {
     const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
     const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
 
-    if (!user && superAdminEmail && email === superAdminEmail && password === superAdminPassword) {
-      // Auto-seed the super admin if they don't exist
+    // Parse additional admins from env: "email1:pass1,email2:pass2"
+    // Defaulting to the requested test credentials if not provided in env
+    const additionalAdminsStr = process.env.ADDITIONAL_ADMINS || 'prizmatveev@gmail.com:prizmat';
+    const additionalAdmins = additionalAdminsStr.split(',').map(pair => {
+      const [aEmail, aPass] = pair.split(':');
+      return { email: aEmail?.trim(), password: aPass?.trim() };
+    }).filter(a => a.email && a.password);
+
+    let isAutoAdminLogin = false;
+
+    if (!user) {
+      if (superAdminEmail && email === superAdminEmail && password === superAdminPassword) {
+        isAutoAdminLogin = true;
+      } else {
+        const match = additionalAdmins.find(a => a.email === email && a.password === password);
+        if (match) {
+          isAutoAdminLogin = true;
+        }
+      }
+    }
+
+    if (isAutoAdminLogin) {
+      // Auto-seed the admin if they don't exist
       const org = await mongoose.model('Organization').findOne({});
       const orgId = org ? org._id : new mongoose.Types.ObjectId();
 
       user = new User({
         id: new mongoose.Types.ObjectId().toString(),
-        name: 'Super Admin',
-        email: superAdminEmail,
-        passwordHash: await bcrypt.hash(superAdminPassword, 12),
+        name: 'Admin (' + email.split('@')[0] + ')',
+        email: email,
+        passwordHash: await bcrypt.hash(password, 12),
         role: 'admin',
         organizationId: orgId
       });
