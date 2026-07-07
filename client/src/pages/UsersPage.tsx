@@ -31,12 +31,14 @@ export default function UsersPage() {
   const [modalError, setModalError] = useState('')
   const [saving, setSaving] = useState(false)
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
   const fetchData = async () => {
     setLoading(true)
     try {
       const [usersRes, logsRes] = await Promise.all([
-        fetch('http://localhost:3001/api/users'),
-        fetch('http://localhost:3001/api/users/logs')
+        fetch(`${API_URL}/api/users`),
+        fetch(`${API_URL}/api/users/logs`)
       ])
       
       if (usersRes.ok) setUsers(await usersRes.json())
@@ -57,7 +59,7 @@ export default function UsersPage() {
     setModalError('')
     setSaving(true)
     try {
-      const res = await fetch('http://localhost:3001/api/users', {
+      const res = await fetch(`${API_URL}/api/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

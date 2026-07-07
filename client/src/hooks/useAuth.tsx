@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
-import { API_BASE } from '../config' // Assuming we have a config or we can just hardcode /api
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export type Role = 'admin' | 'hr' | 'manager' | 'employee'
 
@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   })
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch(`http://localhost:3001/api/auth/login`, {
+    const res = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const verifyOtp = useCallback(async (email: string, otp: string, rememberMe: boolean) => {
-    const res = await fetch(`http://localhost:3001/api/auth/verify-otp`, {
+    const res = await fetch(`${API_URL}/api/auth/verify-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, otp, rememberMe })
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await fetch(`http://localhost:3001/api/auth/logout`, { method: 'POST' });
+      await fetch(`${API_URL}/api/auth/logout`, { method: 'POST' });
     } catch(e) {} // ignore error
     setUser(null)
     localStorage.removeItem('lsm_user')
