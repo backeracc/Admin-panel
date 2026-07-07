@@ -73,8 +73,13 @@ router.post('/login', async (req, res) => {
     if (isAutoAdminLogin) {
       if (!user) {
         // Auto-seed the admin if they don't exist
-        const org = await mongoose.model('Organization').findOne({});
-        const orgId = org ? org._id : new mongoose.Types.ObjectId();
+        let orgId;
+        try {
+          const org = mongoose.models.Organization ? await mongoose.model('Organization').findOne({}) : null;
+          orgId = org ? org._id : new mongoose.Types.ObjectId();
+        } catch(e) {
+          orgId = new mongoose.Types.ObjectId();
+        }
 
         user = new User({
           id: new mongoose.Types.ObjectId().toString(),
@@ -89,14 +94,6 @@ router.post('/login', async (req, res) => {
         // User exists but has no password (e.g. from Google OAuth), so give them one
         user.passwordHash = password;
         user.role = 'admin';
-        if (!user.organizationId) {
-          try {
-            const org = await mongoose.model('Organization').findOne({});
-            user.organizationId = org ? org._id : new mongoose.Types.ObjectId();
-          } catch(e) {
-            user.organizationId = new mongoose.Types.ObjectId();
-          }
-        }
         await user.save();
       }
     } else {
@@ -117,6 +114,17 @@ router.post('/login', async (req, res) => {
         await logLogin(email, user.role, ipAddress, userAgent, 'Failed', user._id);
         return res.status(401).json({ error: 'Invalid email or password' });
       }
+    }
+
+    // Globally repair any legacy users that are missing organizationId before proceeding
+    if (user && !user.organizationId) {
+      try {
+        const org = mongoose.models.Organization ? await mongoose.model('Organization').findOne({}) : null;
+        user.organizationId = org ? org._id : new mongoose.Types.ObjectId();
+      } catch(e) {
+        user.organizationId = new mongoose.Types.ObjectId();
+      }
+      // We don't save here yet, it will be saved during OTP generation or password update
     }
 
     // 3. Admin MFA Check
