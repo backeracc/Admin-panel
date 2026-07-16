@@ -20,7 +20,7 @@ const allowedOrigins = [
   'http://localhost:3001', // Backend itself (for curl tests)
   'http://localsm.tech',
   'https://localsm.tech',
-  'https://admin-panel-navy-zeta.vercel.app/',
+  'https://admin-panel-navy-zeta.vercel.app',
   'https://admin-panel-local-sm.vercel.app',
   'https://hiring-portal-rosy.vercel.app',
   'https://test-final-admin.vercel.app',
