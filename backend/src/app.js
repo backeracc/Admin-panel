@@ -28,16 +28,23 @@ const allowedOrigins = [
   'https://www.admin.localsm.tech',
   'https://final-v4-admin.vercel.app',
   'https://localsmhiring.vercel.app',
-  'https://final-v4-admin.vercel.app',
+  'https://admin-panel-final-one.vercel.app',
   process.env.CLIENT_URL,
   process.env.FRONTEND_URL,
 ].filter(Boolean);
+
+// Matches any Vercel preview/production deployment for this project
+// (e.g. admin-panel-final-one.vercel.app, admin-panel-git-main-xyz.vercel.app),
+// so a fresh deployment URL never breaks CORS again.
+const isAllowedVercelDomain = (origin) =>
+  /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin);
 
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (curl, Postman, server-to-server)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (isAllowedVercelDomain(origin)) return callback(null, true);
     return callback(new Error(`CORS blocked: ${origin}`));
   },
   credentials: true
